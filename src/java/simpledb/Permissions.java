@@ -6,21 +6,22 @@ package simpledb;
  * represent the two levels of permission.
  */
 public class Permissions {
-  int permLevel;
 
-  private Permissions(int permLevel) {
-    this.permLevel = permLevel;
-  }
+	int permLevel;
 
-  public String toString() {
-    if (permLevel == 0)
-      return "READ_ONLY";
-    if (permLevel == 1)
-      return "READ_WRITE";
-    return "UNKNOWN";
-  }
+	private Permissions(int permLevel) {
+		this.permLevel = permLevel;
+	}
 
-  public static final Permissions READ_ONLY = new Permissions(0);
-  public static final Permissions READ_WRITE = new Permissions(1);
+	public String toString() {
+		if (permLevel == 0)
+			return "READ_ONLY";
+		if (permLevel == 1)
+			return "READ_WRITE";
+		return "UNKNOWN";
+	}
+
+	public static final Permissions READ_ONLY = new Permissions(0);
+	public static final Permissions READ_WRITE = new Permissions(1);
 
 }
