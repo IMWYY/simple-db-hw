@@ -66,7 +66,7 @@ public class Catalog {
 			if (Objects.equals(t.tableName, name) || file.getId() == t.dbFile.getId()) {
 				this.tables.remove(t);
 				this.tableIds.remove((Integer) t.dbFile.getId());
-				// don't forget to delete the element in tableIds
+				// remember to delete the element in tableIds
 			}
 		}
 		this.tables.add(new Table(file, name, pkeyField));

@@ -3,7 +3,6 @@ package simpledb;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.locks.Lock;
 
 /**
  * BufferPool manages the reading and writing of pages into memory from
