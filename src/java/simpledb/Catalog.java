@@ -35,6 +35,7 @@ public class Catalog {
 
 	}
 
+	// todo may use hashMap instead
 	private List<Table> tables;
 	private List<Integer> tableIds;
 

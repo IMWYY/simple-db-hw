@@ -293,7 +293,7 @@ public class HeapPage implements Page {
 	public int getNumEmptySlots() {
 		// some code goes here
 		int res = 0;
-		for (int i = 0; i < tuples.length; i++) {
+		for (int i = 0; i < numSlots; i++) {
 			res += (isSlotUsed(i) ? 0 : 1);
 		}
 		return res;
@@ -304,8 +304,10 @@ public class HeapPage implements Page {
 	 */
 	public boolean isSlotUsed(int i) {
 		// some code goes here
+		// 大端是指字节序 字节内的顺序是没有大小区分的
 		int index = i >> 3;
-		int offset = i & (1 << 3 - 1);
+		// attention here: 位操作优先级低于加减
+		int offset = i & ((1 << 3) - 1);
 		// big-endian here
 		return ((this.header[index] >> offset) & 1) == 1;
 	}
@@ -325,11 +327,13 @@ public class HeapPage implements Page {
 	public Iterator<Tuple> iterator() {
 		// some code goes here
 		return new Iterator<Tuple>() {
-			private int index = 0;
+			private int index = 0, count = 0;
+			private int usedTupleNum = getNumTuples() - getNumEmptySlots();
 
 			@Override
 			public boolean hasNext() {
-				return index >= numSlots;
+				System.out.println("has next: " + index + " - " + numSlots + " - " + usedTupleNum + " - " + getNumEmptySlots());
+				return index < numSlots && count < usedTupleNum;
 			}
 
 			@Override
@@ -337,12 +341,13 @@ public class HeapPage implements Page {
 				if (!hasNext()) {
 					throw new NoSuchElementException();
 				}
-				while (!isSlotUsed(index)) {
+				while (index < numSlots && !isSlotUsed(index)) {
 					index++;
-					if (!hasNext()) {
-						throw new NoSuchElementException();
-					}
 				}
+				if (index == numSlots) {
+					throw new NoSuchElementException();
+				}
+				count++;
 				return tuples[index++];
 			}
 
