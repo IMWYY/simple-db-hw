@@ -384,6 +384,9 @@ public class TestUtil {
 	 * JUnit fixture that creates a heap file and cleans it up afterward.
 	 */
 	public static abstract class CreateHeapFile {
+		private final File emptyFile;
+		protected HeapFile empty;
+
 		protected CreateHeapFile() {
 			try {
 				emptyFile = File.createTempFile("empty", ".dat");
@@ -401,8 +404,5 @@ public class TestUtil {
 				throw new RuntimeException(e);
 			}
 		}
-
-		protected HeapFile empty;
-		private final File emptyFile;
 	}
 }

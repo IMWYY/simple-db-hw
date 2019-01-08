@@ -38,6 +38,10 @@ public class SeqScan implements OpIterator {
 		this.tupleDesc = initTupleDesc(tableid, tableAlias);
 	}
 
+	public SeqScan(TransactionId tid, int tableId) {
+		this(tid, tableId, Database.getCatalog().getTableName(tableId));
+	}
+
 	private TupleDesc initTupleDesc(int tableid, String alias) {
 		TupleDesc desc = Database.getCatalog().getTupleDesc(tableid);
 		Type[] types = new Type[desc.numFields()];
@@ -82,10 +86,6 @@ public class SeqScan implements OpIterator {
 		this.tableId = tableid;
 		this.tableAlias = tableAlias;
 		this.tupleDesc = initTupleDesc(tableid, tableAlias);
-	}
-
-	public SeqScan(TransactionId tid, int tableId) {
-		this(tid, tableId, Database.getCatalog().getTableName(tableId));
 	}
 
 	public void open() throws DbException, TransactionAbortedException {

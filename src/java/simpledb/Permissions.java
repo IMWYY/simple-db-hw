@@ -7,6 +7,8 @@ package simpledb;
  */
 public class Permissions {
 
+	public static final Permissions READ_ONLY = new Permissions(0);
+	public static final Permissions READ_WRITE = new Permissions(1);
 	int permLevel;
 
 	private Permissions(int permLevel) {
@@ -20,8 +22,5 @@ public class Permissions {
 			return "READ_WRITE";
 		return "UNKNOWN";
 	}
-
-	public static final Permissions READ_ONLY = new Permissions(0);
-	public static final Permissions READ_WRITE = new Permissions(1);
 
 }

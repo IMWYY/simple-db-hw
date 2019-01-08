@@ -13,10 +13,6 @@ public class StringField implements Field {
 	private final String value;
 	private final int maxSize;
 
-	public String getValue() {
-		return value;
-	}
-
 	/**
 	 * Constructor.
 	 *
@@ -30,6 +26,10 @@ public class StringField implements Field {
 			value = s.substring(0, maxSize);
 		else
 			value = s;
+	}
+
+	public String getValue() {
+		return value;
 	}
 
 	public String toString() {

@@ -32,7 +32,16 @@ import java.util.NoSuchElementException;
 import java.util.Vector;
 
 public class Parser {
+	// Basic SQL completions
+	public static final String[] SQL_COMMANDS = { "select", "from", "where",
+			"group by", "max(", "min(", "avg(", "count", "rollback", "commit",
+			"insert", "delete", "values", "into" };
+	static final String usage = "Usage: parser catalogFile [-explain] [-f queryFile]";
+	static final int SLEEP_TIME = 1000;
 	static boolean explain = false;
+	protected boolean interactive = true;
+	private Transaction curtrans = null;
+	private boolean inUserTrans = false;
 
 	public static Predicate.Op getOp(String s) throws simpledb.ParsingException {
 		if (s.equals("="))
@@ -55,6 +64,18 @@ public class Parser {
 			return Predicate.Op.NOT_EQUALS;
 
 		throw new simpledb.ParsingException("Unknown predicate " + s);
+	}
+
+	public static void main(String argv[]) throws IOException {
+
+		if (argv.length < 1 || argv.length > 4) {
+			System.out.println("Invalid number of arguments.\n" + usage);
+			System.exit(0);
+		}
+
+		Parser p = new Parser();
+
+		p.start(argv);
 	}
 
 	void processExpression(TransactionId tid, ZExpression wx, LogicalPlan lp)
@@ -292,9 +313,6 @@ public class Parser {
 		return lp;
 	}
 
-	private Transaction curtrans = null;
-	private boolean inUserTrans = false;
-
 	public Query handleQueryStatement(ZQuery s, TransactionId tId)
 			throws TransactionAbortedException, DbException, IOException,
 			simpledb.ParsingException, Zql.ParseException {
@@ -506,12 +524,12 @@ public class Parser {
 				"Cannot generate logical plan for expression : " + s);
 	}
 
-	public void setTransaction(Transaction t) {
-		curtrans = t;
-	}
-
 	public Transaction getTransaction() {
 		return curtrans;
+	}
+
+	public void setTransaction(Transaction t) {
+		curtrans = t;
 	}
 
 	public void processNextStatement(String s) {
@@ -600,31 +618,9 @@ public class Parser {
 		}
 	}
 
-	// Basic SQL completions
-	public static final String[] SQL_COMMANDS = { "select", "from", "where",
-			"group by", "max(", "min(", "avg(", "count", "rollback", "commit",
-			"insert", "delete", "values", "into" };
-
-	public static void main(String argv[]) throws IOException {
-
-		if (argv.length < 1 || argv.length > 4) {
-			System.out.println("Invalid number of arguments.\n" + usage);
-			System.exit(0);
-		}
-
-		Parser p = new Parser();
-
-		p.start(argv);
-	}
-
-	static final String usage = "Usage: parser catalogFile [-explain] [-f queryFile]";
-	static final int SLEEP_TIME = 1000;
-
 	protected void shutdown() {
 		System.out.println("Bye");
 	}
-
-	protected boolean interactive = true;
 
 	protected void start(String[] argv) throws IOException {
 		// first add tables to database

@@ -1,22 +1,29 @@
 package simpledb;
 
-import simpledb.systemtest.SimpleDbTestBase;
-import simpledb.BTreeUtility.BTreeWriter;
-import simpledb.Predicate.Op;
-
-import java.util.*;
-
+import junit.framework.JUnit4TestAdapter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import simpledb.BTreeUtility.BTreeWriter;
+import simpledb.Predicate.Op;
+import simpledb.systemtest.SimpleDbTestBase;
 
-import static org.junit.Assert.*;
-import junit.framework.JUnit4TestAdapter;
+import java.util.Iterator;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class BTreeNextKeyLockingTest extends SimpleDbTestBase {
-	private TransactionId tid;
-	
 	private static final int POLL_INTERVAL = 100;
+	private TransactionId tid;
+
+	/**
+	 * JUnit suite target
+	 */
+	public static junit.framework.Test suite() {
+		return new JUnit4TestAdapter(BTreeNextKeyLockingTest.class);
+	}
 
 	/**
 	 * Set up initial resources for each unit test.
@@ -33,24 +40,26 @@ public class BTreeNextKeyLockingTest extends SimpleDbTestBase {
 
 	@Test
 	public void nextKeyLockingTestLessThan() throws Exception {
-		
+
 		// This should create a B+ tree with 100 leaf pages
 		BTreeFile bigFile = BTreeUtility.createRandomBTreeFile(2, 50200,
 				null, null, 0);
 
 		// get a key from the middle of the root page
 		BTreePageId rootPtrPid = new BTreePageId(bigFile.getId(), 0, BTreePageId.ROOT_PTR);
-		BTreeRootPtrPage rootPtr = (BTreeRootPtrPage) Database.getBufferPool().getPage(tid, rootPtrPid, Permissions.READ_ONLY);
+		BTreeRootPtrPage rootPtr = (BTreeRootPtrPage) Database.getBufferPool()
+				.getPage(tid, rootPtrPid, Permissions.READ_ONLY);
 		BTreePageId rootId = rootPtr.getRootId();
 		assertEquals(rootId.pgcateg(), BTreePageId.INTERNAL);
-		BTreeInternalPage root = (BTreeInternalPage) Database.getBufferPool().getPage(tid, rootId, Permissions.READ_ONLY);
+		BTreeInternalPage root = (BTreeInternalPage) Database.getBufferPool()
+				.getPage(tid, rootId, Permissions.READ_ONLY);
 		int keyIndex = 50; // this should be right in the middle since there are 100 leaf pages
 		Iterator<BTreeEntry> it = root.iterator();
 		Field key = null;
 		int count = 0;
-		while(it.hasNext()) {
+		while (it.hasNext()) {
 			BTreeEntry e = it.next();
-			if(count == keyIndex) {
+			if (count == keyIndex) {
 				key = e.getKey();
 				break;
 			}
@@ -62,18 +71,18 @@ public class BTreeNextKeyLockingTest extends SimpleDbTestBase {
 		IndexPredicate ipred = new IndexPredicate(Op.EQUALS, key);
 		DbFileIterator fit = bigFile.indexIterator(tid, ipred);
 		fit.open();
-		while(fit.hasNext()) {
+		while (fit.hasNext()) {
 			Database.getBufferPool().deleteTuple(tid, fit.next());
 		}
 		fit.close();
 
 		count = 0;
-		while(count == 0) {
+		while (count == 0) {
 			key = new IntField(((IntField) key).getValue() + 1);
 			ipred = new IndexPredicate(Op.EQUALS, key);
 			fit = bigFile.indexIterator(tid, ipred);
 			fit.open();
-			while(fit.hasNext()) {
+			while (fit.hasNext()) {
 				Database.getBufferPool().deleteTuple(tid, fit.next());
 				count++;
 			}
@@ -88,7 +97,7 @@ public class BTreeNextKeyLockingTest extends SimpleDbTestBase {
 		fit = bigFile.indexIterator(tid, ipred);
 		fit.open();
 		int keyCountBefore = 0;
-		while(fit.hasNext()) {
+		while (fit.hasNext()) {
 			fit.next();
 			keyCountBefore++;
 		}
@@ -107,7 +116,7 @@ public class BTreeNextKeyLockingTest extends SimpleDbTestBase {
 		fit = bigFile.indexIterator(tid, ipred);
 		fit.open();
 		int keyCountAfter = 0;
-		while(fit.hasNext()) {
+		while (fit.hasNext()) {
 			fit.next();
 			keyCountAfter++;
 		}
@@ -123,9 +132,9 @@ public class BTreeNextKeyLockingTest extends SimpleDbTestBase {
 		// now let the inserts happen
 		Database.getBufferPool().transactionComplete(tid);
 
-		while(!bw1.succeeded()) {
+		while (!bw1.succeeded()) {
 			Thread.sleep(POLL_INTERVAL);
-			if(bw1.succeeded()) {
+			if (bw1.succeeded()) {
 				Database.getBufferPool().transactionComplete(tid1);
 			}
 		}
@@ -142,17 +151,19 @@ public class BTreeNextKeyLockingTest extends SimpleDbTestBase {
 
 		// get a key from the middle of the root page
 		BTreePageId rootPtrPid = new BTreePageId(bigFile.getId(), 0, BTreePageId.ROOT_PTR);
-		BTreeRootPtrPage rootPtr = (BTreeRootPtrPage) Database.getBufferPool().getPage(tid, rootPtrPid, Permissions.READ_ONLY);
+		BTreeRootPtrPage rootPtr = (BTreeRootPtrPage) Database.getBufferPool()
+				.getPage(tid, rootPtrPid, Permissions.READ_ONLY);
 		BTreePageId rootId = rootPtr.getRootId();
 		assertEquals(rootId.pgcateg(), BTreePageId.INTERNAL);
-		BTreeInternalPage root = (BTreeInternalPage) Database.getBufferPool().getPage(tid, rootId, Permissions.READ_ONLY);
+		BTreeInternalPage root = (BTreeInternalPage) Database.getBufferPool()
+				.getPage(tid, rootId, Permissions.READ_ONLY);
 		int keyIndex = 50; // this should be right in the middle since there are 100 leaf pages
 		Iterator<BTreeEntry> it = root.iterator();
 		Field key = null;
 		int count = 0;
-		while(it.hasNext()) {
+		while (it.hasNext()) {
 			BTreeEntry e = it.next();
-			if(count == keyIndex) {
+			if (count == keyIndex) {
 				key = e.getKey();
 				break;
 			}
@@ -164,18 +175,18 @@ public class BTreeNextKeyLockingTest extends SimpleDbTestBase {
 		IndexPredicate ipred = new IndexPredicate(Op.EQUALS, key);
 		DbFileIterator fit = bigFile.indexIterator(tid, ipred);
 		fit.open();
-		while(fit.hasNext()) {
+		while (fit.hasNext()) {
 			Database.getBufferPool().deleteTuple(tid, fit.next());
 		}
 		fit.close();
 
 		count = 0;
-		while(count == 0) {
+		while (count == 0) {
 			key = new IntField(((IntField) key).getValue() - 1);
 			ipred = new IndexPredicate(Op.EQUALS, key);
 			fit = bigFile.indexIterator(tid, ipred);
 			fit.open();
-			while(fit.hasNext()) {
+			while (fit.hasNext()) {
 				Database.getBufferPool().deleteTuple(tid, fit.next());
 				count++;
 			}
@@ -190,7 +201,7 @@ public class BTreeNextKeyLockingTest extends SimpleDbTestBase {
 		fit = bigFile.indexIterator(tid, ipred);
 		fit.open();
 		int keyCountBefore = 0;
-		while(fit.hasNext()) {
+		while (fit.hasNext()) {
 			fit.next();
 			keyCountBefore++;
 		}
@@ -209,7 +220,7 @@ public class BTreeNextKeyLockingTest extends SimpleDbTestBase {
 		fit = bigFile.indexIterator(tid, ipred);
 		fit.open();
 		int keyCountAfter = 0;
-		while(fit.hasNext()) {
+		while (fit.hasNext()) {
 			fit.next();
 			keyCountAfter++;
 		}
@@ -225,21 +236,14 @@ public class BTreeNextKeyLockingTest extends SimpleDbTestBase {
 		// now let the inserts happen
 		Database.getBufferPool().transactionComplete(tid);
 
-		while(!bw1.succeeded()) {
+		while (!bw1.succeeded()) {
 			Thread.sleep(POLL_INTERVAL);
-			if(bw1.succeeded()) {
+			if (bw1.succeeded()) {
 				Database.getBufferPool().transactionComplete(tid1);
 			}
 		}
 
 		// clean up
 		bw1 = null;
-	}
-
-	/**
-	 * JUnit suite target
-	 */
-	public static junit.framework.Test suite() {
-		return new JUnit4TestAdapter(BTreeNextKeyLockingTest.class);
 	}
 }

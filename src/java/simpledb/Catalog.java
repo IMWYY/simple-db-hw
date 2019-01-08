@@ -22,23 +22,9 @@ import java.util.UUID;
  */
 public class Catalog {
 
-	private class Table {
-		DbFile dbFile;
-		String tableName;
-		String pkField;
-
-		Table(DbFile dbFile, String tableName, String pkField) {
-			this.dbFile = dbFile;
-			this.tableName = tableName;
-			this.pkField = pkField;
-		}
-
-	}
-
 	// todo may use hashMap instead
 	private List<Table> tables;
 	private List<Integer> tableIds;
-
 	/**
 	 * Constructor.
 	 * Creates a new, empty catalog.
@@ -227,6 +213,19 @@ public class Catalog {
 			System.out.println("Invalid catalog entry : " + line);
 			System.exit(0);
 		}
+	}
+
+	private class Table {
+		DbFile dbFile;
+		String tableName;
+		String pkField;
+
+		Table(DbFile dbFile, String tableName, String pkField) {
+			this.dbFile = dbFile;
+			this.tableName = tableName;
+			this.pkField = pkField;
+		}
+
 	}
 }
 

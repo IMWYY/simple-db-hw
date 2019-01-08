@@ -16,11 +16,10 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class Database {
 
+	private final static String LOGFILENAME = "log";
 	private static AtomicReference<Database> _instance = new AtomicReference<>(new Database());
 	private final Catalog _catalog;
 	private final BufferPool _bufferpool;
-
-	private final static String LOGFILENAME = "log";
 	private final LogFile _logfile;
 
 	private Database() {

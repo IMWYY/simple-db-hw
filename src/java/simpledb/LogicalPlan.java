@@ -54,6 +54,95 @@ public class LogicalPlan {
 	}
 
 	/**
+	 * Convert the aggregate operator name s into an Aggregator.op operation.
+	 *
+	 * @throws ParsingException if s is not a valid operator name
+	 */
+	static Aggregator.Op getAggOp(String s) throws ParsingException {
+		s = s.toUpperCase();
+		if (s.equals("AVG"))
+			return Aggregator.Op.AVG;
+		if (s.equals("SUM"))
+			return Aggregator.Op.SUM;
+		if (s.equals("COUNT"))
+			return Aggregator.Op.COUNT;
+		if (s.equals("MIN"))
+			return Aggregator.Op.MIN;
+		if (s.equals("MAX"))
+			return Aggregator.Op.MAX;
+		throw new ParsingException("Unknown predicate " + s);
+	}
+
+	public static void main(String argv[]) {
+		// construct a 3-column table schema
+		Type types[] = new Type[] { Type.INT_TYPE, Type.INT_TYPE, Type.INT_TYPE };
+		String names[] = new String[] { "field0", "field1", "field2" };
+
+		TupleDesc td = new TupleDesc(types, names);
+		TableStats ts;
+		HashMap<String, TableStats> tableMap = new HashMap<String, TableStats>();
+
+		// create the tables, associate them with the data files
+		// and tell the catalog about the schema  the tables.
+		HeapFile table1 = new HeapFile(new File("some_data_file1.dat"), td);
+		Database.getCatalog().addTable(table1, "t1");
+		ts = new TableStats(table1.getId(), 1);
+		tableMap.put("t1", ts);
+
+		TransactionId tid = new TransactionId();
+
+		LogicalPlan lp = new LogicalPlan();
+
+		lp.addScan(table1.getId(), "t1");
+
+		try {
+			lp.addFilter("t1.field0", Predicate.Op.GREATER_THAN, "1");
+		} catch (Exception e) {
+		}
+
+        /*
+        SeqScan ss1 = new SeqScan(tid, table1.getId(), "t1");
+        SeqScan ss2 = new SeqScan(tid, table2.getId(), "t2");
+
+        // create a filter for the where condition
+        Filter sf1 = new Filter(
+                                new Predicate(0,
+                                Predicate.Op.GREATER_THAN, new IntField(1)),  ss1);
+
+        JoinPredicate p = new JoinPredicate(1, Predicate.Op.EQUALS, 1);
+        Join j = new Join(p, sf1, ss2);
+        */
+		OpIterator j = null;
+		try {
+			j = lp.physicalPlan(tid, tableMap, false);
+		} catch (ParsingException e) {
+			e.printStackTrace();
+			System.exit(0);
+		}
+		// and run it
+		try {
+			j.open();
+			while (j.hasNext()) {
+				Tuple tup = j.next();
+				System.out.println(tup);
+			}
+			j.close();
+			Database.getBufferPool().transactionComplete(tid);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	/**
+	 * Get the query text associated with this plan via {@link #setQuery}.
+	 */
+	public String getQuery() {
+		return query;
+	}
+
+	/**
 	 * Set the text of the query representing this logical plan.  Does NOT parse the
 	 * specified query -- this method is just used so that the object can print the
 	 * SQL it represents.
@@ -62,13 +151,6 @@ public class LogicalPlan {
 	 */
 	public void setQuery(String query) {
 		this.query = query;
-	}
-
-	/**
-	 * Get the query text associated with this plan via {@link #setQuery}.
-	 */
-	public String getQuery() {
-		return query;
 	}
 
 	/**
@@ -279,26 +361,6 @@ public class LogicalPlan {
 		else
 			throw new ParsingException("Field " + name + " does not appear in any tables.");
 
-	}
-
-	/**
-	 * Convert the aggregate operator name s into an Aggregator.op operation.
-	 *
-	 * @throws ParsingException if s is not a valid operator name
-	 */
-	static Aggregator.Op getAggOp(String s) throws ParsingException {
-		s = s.toUpperCase();
-		if (s.equals("AVG"))
-			return Aggregator.Op.AVG;
-		if (s.equals("SUM"))
-			return Aggregator.Op.SUM;
-		if (s.equals("COUNT"))
-			return Aggregator.Op.COUNT;
-		if (s.equals("MIN"))
-			return Aggregator.Op.MIN;
-		if (s.equals("MAX"))
-			return Aggregator.Op.MAX;
-		throw new ParsingException("Unknown predicate " + s);
 	}
 
 	/**
@@ -513,68 +575,6 @@ public class LogicalPlan {
 		}
 
 		return new Project(outFields, outTypes, node);
-	}
-
-	public static void main(String argv[]) {
-		// construct a 3-column table schema
-		Type types[] = new Type[] { Type.INT_TYPE, Type.INT_TYPE, Type.INT_TYPE };
-		String names[] = new String[] { "field0", "field1", "field2" };
-
-		TupleDesc td = new TupleDesc(types, names);
-		TableStats ts;
-		HashMap<String, TableStats> tableMap = new HashMap<String, TableStats>();
-
-		// create the tables, associate them with the data files
-		// and tell the catalog about the schema  the tables.
-		HeapFile table1 = new HeapFile(new File("some_data_file1.dat"), td);
-		Database.getCatalog().addTable(table1, "t1");
-		ts = new TableStats(table1.getId(), 1);
-		tableMap.put("t1", ts);
-
-		TransactionId tid = new TransactionId();
-
-		LogicalPlan lp = new LogicalPlan();
-
-		lp.addScan(table1.getId(), "t1");
-
-		try {
-			lp.addFilter("t1.field0", Predicate.Op.GREATER_THAN, "1");
-		} catch (Exception e) {
-		}
-
-        /*
-        SeqScan ss1 = new SeqScan(tid, table1.getId(), "t1");
-        SeqScan ss2 = new SeqScan(tid, table2.getId(), "t2");
-
-        // create a filter for the where condition
-        Filter sf1 = new Filter(
-                                new Predicate(0,
-                                Predicate.Op.GREATER_THAN, new IntField(1)),  ss1);
-
-        JoinPredicate p = new JoinPredicate(1, Predicate.Op.EQUALS, 1);
-        Join j = new Join(p, sf1, ss2);
-        */
-		OpIterator j = null;
-		try {
-			j = lp.physicalPlan(tid, tableMap, false);
-		} catch (ParsingException e) {
-			e.printStackTrace();
-			System.exit(0);
-		}
-		// and run it
-		try {
-			j.open();
-			while (j.hasNext()) {
-				Tuple tup = j.next();
-				System.out.println(tup);
-			}
-			j.close();
-			Database.getBufferPool().transactionComplete(tid);
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
 	}
 
 }

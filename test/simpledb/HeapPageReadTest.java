@@ -17,8 +17,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class HeapPageReadTest extends SimpleDbTestBase {
-	private HeapPageId pid;
-
 	public static final int[][] EXAMPLE_VALUES = new int[][] {
 			{ 31933, 862 },
 			{ 29402, 56883 },
@@ -41,7 +39,6 @@ public class HeapPageReadTest extends SimpleDbTestBase {
 			{ 62778, 21122 },
 			{ 17197, 16388 }
 	};
-
 	public static final byte[] EXAMPLE_DATA;
 
 	static {
@@ -64,6 +61,15 @@ public class HeapPageReadTest extends SimpleDbTestBase {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	private HeapPageId pid;
+
+	/**
+	 * JUnit suite target
+	 */
+	public static junit.framework.Test suite() {
+		return new JUnit4TestAdapter(HeapPageReadTest.class);
 	}
 
 	/**
@@ -125,12 +131,5 @@ public class HeapPageReadTest extends SimpleDbTestBase {
 
 		for (int i = 20; i < 504; ++i)
 			assertFalse(page.isSlotUsed(i));
-	}
-
-	/**
-	 * JUnit suite target
-	 */
-	public static junit.framework.Test suite() {
-		return new JUnit4TestAdapter(HeapPageReadTest.class);
 	}
 }

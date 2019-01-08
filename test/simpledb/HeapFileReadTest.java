@@ -21,6 +21,13 @@ public class HeapFileReadTest extends SimpleDbTestBase {
 	private TupleDesc td;
 
 	/**
+	 * JUnit suite target
+	 */
+	public static junit.framework.Test suite() {
+		return new JUnit4TestAdapter(HeapFileReadTest.class);
+	}
+
+	/**
 	 * Set up initial resources for each unit test.
 	 */
 	@Before
@@ -123,12 +130,5 @@ public class HeapFileReadTest extends SimpleDbTestBase {
 		}
 		// close twice is harmless
 		it.close();
-	}
-
-	/**
-	 * JUnit suite target
-	 */
-	public static junit.framework.Test suite() {
-		return new JUnit4TestAdapter(HeapFileReadTest.class);
 	}
 }

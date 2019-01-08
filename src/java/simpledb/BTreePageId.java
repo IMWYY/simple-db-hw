@@ -15,6 +15,20 @@ public class BTreePageId implements PageId {
 	private final int pgNo;
 	private int pgcateg;
 
+	/**
+	 * Constructor. Create a page id structure for a specific page of a
+	 * specific table.
+	 *
+	 * @param tableId The table that is being referenced
+	 * @param pgNo    The page number in that table.
+	 * @param pgcateg which kind of page it is
+	 */
+	public BTreePageId(int tableId, int pgNo, int pgcateg) {
+		this.tableId = tableId;
+		this.pgNo = pgNo;
+		this.pgcateg = pgcateg;
+	}
+
 	static public String categToString(int categ) {
 		switch (categ) {
 		case ROOT_PTR:
@@ -28,20 +42,6 @@ public class BTreePageId implements PageId {
 		default:
 			throw new IllegalArgumentException("categ");
 		}
-	}
-
-	/**
-	 * Constructor. Create a page id structure for a specific page of a
-	 * specific table.
-	 *
-	 * @param tableId The table that is being referenced
-	 * @param pgNo    The page number in that table.
-	 * @param pgcateg which kind of page it is
-	 */
-	public BTreePageId(int tableId, int pgNo, int pgcateg) {
-		this.tableId = tableId;
-		this.pgNo = pgNo;
-		this.pgcateg = pgcateg;
 	}
 
 	/**

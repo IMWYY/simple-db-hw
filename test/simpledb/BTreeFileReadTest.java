@@ -1,21 +1,31 @@
 package simpledb;
 
-import simpledb.systemtest.SimpleDbTestBase;
-import simpledb.Predicate.Op;
-
-import java.util.*;
-
+import junit.framework.JUnit4TestAdapter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import simpledb.Predicate.Op;
+import simpledb.systemtest.SimpleDbTestBase;
 
-import static org.junit.Assert.*;
-import junit.framework.JUnit4TestAdapter;
+import java.util.NoSuchElementException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class BTreeFileReadTest extends SimpleDbTestBase {
 	private BTreeFile f;
 	private TransactionId tid;
 	private TupleDesc td;
+
+	/**
+	 * JUnit suite target
+	 */
+	public static junit.framework.Test suite() {
+		return new JUnit4TestAdapter(BTreeFileReadTest.class);
+	}
 
 	/**
 	 * Set up initial resources for each unit test.
@@ -51,9 +61,10 @@ public class BTreeFileReadTest extends SimpleDbTestBase {
 	 * Unit test for BTreeFile.getTupleDesc()
 	 */
 	@Test
-	public void getTupleDesc() throws Exception {    	
-		assertEquals(td, f.getTupleDesc());        
+	public void getTupleDesc() throws Exception {
+		assertEquals(td, f.getTupleDesc());
 	}
+
 	/**
 	 * Unit test for BTreeFile.numPages()
 	 */
@@ -133,17 +144,18 @@ public class BTreeFileReadTest extends SimpleDbTestBase {
 	/**
 	 * Unit test for BTreeFile.indexIterator()
 	 */
-	@Test public void indexIterator() throws Exception {
+	@Test
+	public void indexIterator() throws Exception {
 		BTreeFile twoLeafPageFile = BTreeUtility.createBTreeFile(2, 520,
 				null, null, 0);
-		Field f =  new IntField(5);
+		Field f = new IntField(5);
 
 		// greater than
 		IndexPredicate ipred = new IndexPredicate(Op.GREATER_THAN, f);
 		DbFileIterator it = twoLeafPageFile.indexIterator(tid, ipred);
 		it.open();
 		int count = 0;
-		while(it.hasNext()) {
+		while (it.hasNext()) {
 			Tuple t = it.next();
 			assertTrue(t.getField(0).compare(Op.GREATER_THAN, f));
 			count++;
@@ -156,7 +168,7 @@ public class BTreeFileReadTest extends SimpleDbTestBase {
 		it = twoLeafPageFile.indexIterator(tid, ipred);
 		it.open();
 		count = 0;
-		while(it.hasNext()) {
+		while (it.hasNext()) {
 			Tuple t = it.next();
 			assertTrue(t.getField(0).compare(Op.LESS_THAN_OR_EQ, f));
 			count++;
@@ -169,7 +181,7 @@ public class BTreeFileReadTest extends SimpleDbTestBase {
 		it = twoLeafPageFile.indexIterator(tid, ipred);
 		it.open();
 		count = 0;
-		while(it.hasNext()) {
+		while (it.hasNext()) {
 			Tuple t = it.next();
 			assertTrue(t.getField(0).compare(Op.EQUALS, f));
 			count++;
@@ -183,7 +195,7 @@ public class BTreeFileReadTest extends SimpleDbTestBase {
 		it = twoLeafPageFile.indexIterator(tid, ipred);
 		it.open();
 		count = 0;
-		while(it.hasNext()) {
+		while (it.hasNext()) {
 			Tuple t = it.next();
 			assertTrue(t.getField(0).compare(Op.EQUALS, f));
 			count++;
@@ -199,12 +211,5 @@ public class BTreeFileReadTest extends SimpleDbTestBase {
 		assertFalse(it.hasNext());
 		it.close();
 
-	}
-
-	/**
-	 * JUnit suite target
-	 */
-	public static junit.framework.Test suite() {
-		return new JUnit4TestAdapter(BTreeFileReadTest.class);
 	}
 }

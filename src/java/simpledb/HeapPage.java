@@ -22,9 +22,8 @@ public class HeapPage implements Page {
 	final byte header[];
 	final Tuple tuples[];
 	final int numSlots;
-
-	byte[] oldData;
 	private final Byte oldDataLock = new Byte((byte) 0);
+	byte[] oldData;
 
 	/**
 	 * Create a HeapPage from a set of bytes of data read from disk.
@@ -65,6 +64,20 @@ public class HeapPage implements Page {
 		dis.close();
 
 		setBeforeImage();
+	}
+
+	/**
+	 * Static method to generate a byte array corresponding to an empty
+	 * HeapPage.
+	 * Used to add new, empty pages to the file. Passing the results of
+	 * this method to the HeapPage constructor will create a HeapPage with
+	 * no valid tuples in it.
+	 *
+	 * @return The returned ByteArray.
+	 */
+	public static byte[] createEmptyPageData() {
+		int len = BufferPool.getPageSize();
+		return new byte[len]; //all 0
 	}
 
 	/**
@@ -227,20 +240,6 @@ public class HeapPage implements Page {
 		}
 
 		return baos.toByteArray();
-	}
-
-	/**
-	 * Static method to generate a byte array corresponding to an empty
-	 * HeapPage.
-	 * Used to add new, empty pages to the file. Passing the results of
-	 * this method to the HeapPage constructor will create a HeapPage with
-	 * no valid tuples in it.
-	 *
-	 * @return The returned ByteArray.
-	 */
-	public static byte[] createEmptyPageData() {
-		int len = BufferPool.getPageSize();
-		return new byte[len]; //all 0
 	}
 
 	/**

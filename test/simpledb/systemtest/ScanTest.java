@@ -32,6 +32,13 @@ public class ScanTest extends SimpleDbTestBase {
 	private final static Random r = new Random();
 
 	/**
+	 * Make test compatible with older version of ant.
+	 */
+	public static junit.framework.Test suite() {
+		return new junit.framework.JUnit4TestAdapter(ScanTest.class);
+	}
+
+	/**
 	 * Tests the scan operator for a table with the specified dimensions.
 	 */
 	private void validateScan(int[] columnSizes, int[] rowSizes)
@@ -93,6 +100,8 @@ public class ScanTest extends SimpleDbTestBase {
 	public void testCache() throws IOException, DbException, TransactionAbortedException {
 		/** Counts the number of readPage operations. */
 		class InstrumentedHeapFile extends HeapFile {
+			public int readCount = 0;
+
 			public InstrumentedHeapFile(File f, TupleDesc td) {
 				super(f, td);
 			}
@@ -102,8 +111,6 @@ public class ScanTest extends SimpleDbTestBase {
 				readCount += 1;
 				return super.readPage(pid);
 			}
-
-			public int readCount = 0;
 		}
 
 		// Create the table
@@ -122,12 +129,5 @@ public class ScanTest extends SimpleDbTestBase {
 		// Scan the table again: all pages should be cached
 		SystemTestUtil.matchTuples(table, tuples);
 		assertEquals(0, table.readCount);
-	}
-
-	/**
-	 * Make test compatible with older version of ant.
-	 */
-	public static junit.framework.Test suite() {
-		return new junit.framework.JUnit4TestAdapter(ScanTest.class);
 	}
 }

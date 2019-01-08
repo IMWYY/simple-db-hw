@@ -15,6 +15,13 @@ public class RecordIdTest extends SimpleDbTestBase {
 	private static RecordId hrid3;
 	private static RecordId hrid4;
 
+	/**
+	 * JUnit suite target
+	 */
+	public static junit.framework.Test suite() {
+		return new JUnit4TestAdapter(RecordIdTest.class);
+	}
+
 	@Before
 	public void createPids() {
 		HeapPageId hpid = new HeapPageId(-1, 2);
@@ -64,13 +71,6 @@ public class RecordIdTest extends SimpleDbTestBase {
 	@Test
 	public void hCode() {
 		assertEquals(hrid.hashCode(), hrid2.hashCode());
-	}
-
-	/**
-	 * JUnit suite target
-	 */
-	public static junit.framework.Test suite() {
-		return new JUnit4TestAdapter(RecordIdTest.class);
 	}
 }
 

@@ -1,9 +1,9 @@
 package simpledb;
 
-import java.util.*;
+import java.util.NoSuchElementException;
 
 /**
- * BTreeScan is an operator which reads tuples in sorted order 
+ * BTreeScan is an operator which reads tuples in sorted order
  * according to a predicate
  */
 public class BTreeScan implements OpIterator {
@@ -21,65 +21,61 @@ public class BTreeScan implements OpIterator {
 	/**
 	 * Creates a B+ tree scan over the specified table as a part of the
 	 * specified transaction.
-	 * 
-	 * @param tid
-	 *            The transaction this scan is running as a part of.
-	 * @param tableid
-	 *            the table to scan.
-	 * @param tableAlias
-	 *            the alias of this table (needed by the parser); the returned
-	 *            tupleDesc should have fields with name tableAlias.fieldName
-	 *            (note: this class is not responsible for handling a case where
-	 *            tableAlias or fieldName are null. It shouldn't crash if they
-	 *            are, but the resulting name can be null.fieldName,
-	 *            tableAlias.null, or null.null).
-	 * @param ipred
-	 * 			  The index predicate to match. If null, the scan will return all tuples
-	 *            in sorted order
+	 *
+	 * @param tid        The transaction this scan is running as a part of.
+	 * @param tableid    the table to scan.
+	 * @param tableAlias the alias of this table (needed by the parser); the returned
+	 *                   tupleDesc should have fields with name tableAlias.fieldName
+	 *                   (note: this class is not responsible for handling a case where
+	 *                   tableAlias or fieldName are null. It shouldn't crash if they
+	 *                   are, but the resulting name can be null.fieldName,
+	 *                   tableAlias.null, or null.null).
+	 * @param ipred      The index predicate to match. If null, the scan will return all tuples
+	 *                   in sorted order
 	 */
 	public BTreeScan(TransactionId tid, int tableid, String tableAlias, IndexPredicate ipred) {
 		this.tid = tid;
 		this.ipred = ipred;
-		reset(tableid,tableAlias);
+		reset(tableid, tableAlias);
+	}
+
+	public BTreeScan(TransactionId tid, int tableid, IndexPredicate ipred) {
+		this(tid, tableid, Database.getCatalog().getTableName(tableid), ipred);
 	}
 
 	/**
-	 * @return
-	 *       return the table name of the table the operator scans. This should
-	 *       be the actual name of the table in the catalog of the database
-	 * */
+	 * @return return the table name of the table the operator scans. This should
+	 * be the actual name of the table in the catalog of the database
+	 */
 	public String getTableName() {
 		return this.tablename;
 	}
 
 	/**
-	 * @return Return the alias of the table this operator scans. 
-	 * */
-	public String getAlias()
-	{
+	 * @return Return the alias of the table this operator scans.
+	 */
+	public String getAlias() {
 		return this.alias;
 	}
 
 	/**
 	 * Reset the tableid, and tableAlias of this operator.
-	 * @param tableid
-	 *            the table to scan.
-	 * @param tableAlias
-	 *            the alias of this table (needed by the parser); the returned
-	 *            tupleDesc should have fields with name tableAlias.fieldName
-	 *            (note: this class is not responsible for handling a case where
-	 *            tableAlias or fieldName are null. It shouldn't crash if they
-	 *            are, but the resulting name can be null.fieldName,
-	 *            tableAlias.null, or null.null).
+	 *
+	 * @param tableid    the table to scan.
+	 * @param tableAlias the alias of this table (needed by the parser); the returned
+	 *                   tupleDesc should have fields with name tableAlias.fieldName
+	 *                   (note: this class is not responsible for handling a case where
+	 *                   tableAlias or fieldName are null. It shouldn't crash if they
+	 *                   are, but the resulting name can be null.fieldName,
+	 *                   tableAlias.null, or null.null).
 	 */
 	public void reset(int tableid, String tableAlias) {
-		this.isOpen=false;
+		this.isOpen = false;
 		this.alias = tableAlias;
 		this.tablename = Database.getCatalog().getTableName(tableid);
-		if(ipred == null) {
+		if (ipred == null) {
 			this.it = Database.getCatalog().getDatabaseFile(tableid).iterator(tid);
-		}
-		else {
+		} else {
 			this.it = ((BTreeFile) Database.getCatalog().getDatabaseFile(tableid)).indexIterator(tid, ipred);
 		}
 		myTd = Database.getCatalog().getTupleDesc(tableid);
@@ -95,10 +91,6 @@ public class BTreeScan implements OpIterator {
 		myTd = new TupleDesc(newTypes, newNames);
 	}
 
-	public BTreeScan(TransactionId tid, int tableid, IndexPredicate ipred) {
-		this(tid, tableid, Database.getCatalog().getTableName(tableid), ipred);
-	}
-
 	public void open() throws DbException, TransactionAbortedException {
 		if (isOpen)
 			throw new DbException("double open on one OpIterator.");
@@ -112,9 +104,9 @@ public class BTreeScan implements OpIterator {
 	 * prefixed with the tableAlias string from the constructor. This prefix
 	 * becomes useful when joining tables containing a field(s) with the same
 	 * name.
-	 * 
+	 *
 	 * @return the TupleDesc with field names from the underlying BTreeFile,
-	 *         prefixed with the tableAlias string from the constructor.
+	 * prefixed with the tableAlias string from the constructor.
 	 */
 	public TupleDesc getTupleDesc() {
 		return myTd;
@@ -127,7 +119,7 @@ public class BTreeScan implements OpIterator {
 	}
 
 	public Tuple next() throws NoSuchElementException,
-	TransactionAbortedException, DbException {
+			TransactionAbortedException, DbException {
 		if (!isOpen)
 			throw new IllegalStateException("iterator is closed");
 
@@ -140,7 +132,7 @@ public class BTreeScan implements OpIterator {
 	}
 
 	public void rewind() throws DbException, NoSuchElementException,
-	TransactionAbortedException {
+			TransactionAbortedException {
 		close();
 		open();
 	}
