@@ -154,10 +154,10 @@ public class HeapFile implements DbFile {
 			// get next non empty page and return whether has next
 			while (curPageNo < heapFile.numPages() - 1 && !curPageTuples.hasNext()) {
 				this.curPageNo++;
-				this.curPageTuples = getNextPageTuples(curPageNo);
+				this.curPageTuples = getNextPageTuples(this.curPageNo);
 			}
 
-			if (curPageNo >= heapFile.numPages() - 1) {
+			if (curPageNo >= heapFile.numPages()) {
 				return false;
 			}
 			return curPageTuples.hasNext();

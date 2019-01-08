@@ -332,7 +332,6 @@ public class HeapPage implements Page {
 
 			@Override
 			public boolean hasNext() {
-				System.out.println("has next: " + index + " - " + numSlots + " - " + usedTupleNum + " - " + getNumEmptySlots());
 				return index < numSlots && count < usedTupleNum;
 			}
 

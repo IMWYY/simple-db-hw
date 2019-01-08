@@ -105,7 +105,7 @@ public class SystemTestUtil {
 	}
 
 	public static ArrayList<Integer> tupleToList(Tuple tuple) {
-		ArrayList<Integer> list = new ArrayList<Integer>();
+		ArrayList<Integer> list = new ArrayList<>();
 		for (int i = 0; i < tuple.getTupleDesc().numFields(); ++i) {
 			int value = ((IntField) tuple.getField(i)).getValue();
 			list.add(value);
@@ -128,7 +128,7 @@ public class SystemTestUtil {
 
 	public static void matchTuples(OpIterator iterator, List<ArrayList<Integer>> tuples)
 			throws DbException, TransactionAbortedException, IOException {
-		ArrayList<ArrayList<Integer>> copy = new ArrayList<ArrayList<Integer>>(tuples);
+		ArrayList<ArrayList<Integer>> copy = new ArrayList<>(tuples);
 
 		if (Debug.isEnabled()) {
 			Debug.log("Expected tuples:");
@@ -240,13 +240,13 @@ public class SystemTestUtil {
 		Object[] ret = new Object[2];
 		//compute average
 		double sum = .0;
-		for (int i = 0; i < sequence.length; ++i)
-			sum += sequence[i];
+		for (double aSequence : sequence)
+			sum += aSequence;
 		double av = sum / (sequence.length + .0);
 		//compute standard deviation
 		double sqsum = 0;
-		for (int i = 0; i < sequence.length; ++i)
-			sqsum += (sequence[i] - av) * (sequence[i] - av);
+		for (double aSequence : sequence)
+			sqsum += (aSequence - av) * (aSequence - av);
 		double std = Math.sqrt(sqsum / (sequence.length + .0));
 		ret[0] = std < 1.0 ? Boolean.TRUE : Boolean.FALSE;
 		ret[1] = av;

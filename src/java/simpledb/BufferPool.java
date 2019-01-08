@@ -32,6 +32,8 @@ public class BufferPool {
 
 	private Map<PageId, Page> pages;
 
+	private int numPages;
+
 	/**
 	 * Creates a BufferPool that caches up to numPages pages.
 	 *
@@ -39,7 +41,8 @@ public class BufferPool {
 	 */
 	public BufferPool(int numPages) {
 		// some code goes here
-		this.pages = new HashMap<>();
+		this.numPages = numPages;
+		this.pages = new HashMap<>(this.numPages);
 	}
 
 	public static int getPageSize() {
@@ -78,7 +81,7 @@ public class BufferPool {
 		if (pages.containsKey(pid)) {
 			return pages.get(pid);
 		} else {
-			if (pages.size() >= pageSize) {
+			if (pages.size() >= this.numPages) {
 				throw new DbException("buffer is full");
 			}
 			DbFile dbFile = Database.getCatalog().getDatabaseFile(pid.getTableId());
