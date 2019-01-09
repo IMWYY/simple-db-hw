@@ -147,7 +147,6 @@ public class TestUtil {
 					break;
 				}
 			}
-
 			if (!matched) {
 				throw new RuntimeException("expected tuple not found: " + expectedTup);
 			}
