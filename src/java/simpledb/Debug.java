@@ -13,7 +13,7 @@ package simpledb;
 
 public class Debug {
 	private static final int DEBUG_LEVEL;
-	private static final int DEFAULT_LEVEL = 0;
+	private static final int DEFAULT_LEVEL = -1;
 
 	static {
 		String debug = System.getProperty("simpledb.Debug");

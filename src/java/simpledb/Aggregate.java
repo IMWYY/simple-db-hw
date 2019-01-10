@@ -11,6 +11,13 @@ public class Aggregate extends Operator {
 
 	private static final long serialVersionUID = 1L;
 
+	private OpIterator child;
+	private int afield;
+	private int gfield;
+	private Aggregator.Op aop;
+	private Aggregator aggregator;
+	private OpIterator aggIterator;
+
 	/**
 	 * Constructor.
 	 * <p>
@@ -26,6 +33,19 @@ public class Aggregate extends Operator {
 	 */
 	public Aggregate(OpIterator child, int afield, int gfield, Aggregator.Op aop) {
 		// some code goes here
+		this.child = child;
+		this.afield = afield;
+		this.gfield = gfield;
+		this.aop = aop;
+		if (child.getTupleDesc().getFieldType(afield) == Type.INT_TYPE) {
+			this.aggregator = new IntegerAggregator(gfield,
+					gfield == -1 ? null : child.getTupleDesc().getFieldType(gfield), afield, aop, getTupleDesc());
+		} else if (child.getTupleDesc().getFieldType(afield) == Type.STRING_TYPE) {
+			this.aggregator = new StringAggregator(gfield,
+					gfield == -1 ? null : child.getTupleDesc().getFieldType(gfield), afield, aop, getTupleDesc());
+		} else {
+			throw new IllegalStateException();
+		}
 	}
 
 	public static String nameOfAggregatorOp(Aggregator.Op aop) {
@@ -39,7 +59,7 @@ public class Aggregate extends Operator {
 	 */
 	public int groupField() {
 		// some code goes here
-		return -1;
+		return gfield;
 	}
 
 	/**
@@ -49,7 +69,10 @@ public class Aggregate extends Operator {
 	 */
 	public String groupFieldName() {
 		// some code goes here
-		return null;
+		if (gfield == Aggregator.NO_GROUPING) {
+			return null;
+		}
+		return this.child.getTupleDesc().getFieldName(gfield);
 	}
 
 	/**
@@ -57,7 +80,7 @@ public class Aggregate extends Operator {
 	 */
 	public int aggregateField() {
 		// some code goes here
-		return -1;
+		return this.afield;
 	}
 
 	/**
@@ -66,7 +89,7 @@ public class Aggregate extends Operator {
 	 */
 	public String aggregateFieldName() {
 		// some code goes here
-		return null;
+		return this.child.getTupleDesc().getFieldName(afield);
 	}
 
 	/**
@@ -74,12 +97,19 @@ public class Aggregate extends Operator {
 	 */
 	public Aggregator.Op aggregateOp() {
 		// some code goes here
-		return null;
+		return this.aop;
 	}
 
 	public void open() throws NoSuchElementException, DbException,
 			TransactionAbortedException {
 		// some code goes here
+		super.open();
+		this.child.open();
+		while (this.child.hasNext()) {
+			this.aggregator.mergeTupleIntoGroup(this.child.next());
+		}
+		this.aggIterator = this.aggregator.iterator();
+		this.aggIterator.open();
 	}
 
 	/**
@@ -91,11 +121,18 @@ public class Aggregate extends Operator {
 	 */
 	protected Tuple fetchNext() throws TransactionAbortedException, DbException {
 		// some code goes here
-		return null;
+		if (this.aggIterator == null) {
+			throw new DbException("Not open yet");
+		}
+		if (!this.aggIterator.hasNext()) {
+			return null;
+		}
+		return this.aggIterator.next();
 	}
 
 	public void rewind() throws DbException, TransactionAbortedException {
 		// some code goes here
+		this.aggIterator.rewind();
 	}
 
 	/**
@@ -111,22 +148,43 @@ public class Aggregate extends Operator {
 	 */
 	public TupleDesc getTupleDesc() {
 		// some code goes here
-		return null;
+		Type[] types;
+		String[] names;
+		if (this.gfield == Aggregator.NO_GROUPING) {
+			types = new Type[] { Type.INT_TYPE };
+			names = new String[] { this.child.getTupleDesc().getFieldName(afield) };
+		} else {
+			types = new Type[] {
+					this.child.getTupleDesc().getFieldType(gfield),
+					Type.INT_TYPE,
+			};
+			names = new String[] {
+					this.child.getTupleDesc().getFieldName(gfield),
+					this.child.getTupleDesc().getFieldName(afield)
+
+			};
+		}
+		return new TupleDesc(types, names);
 	}
 
 	public void close() {
 		// some code goes here
+		super.close();
+		this.aggIterator.close();
 	}
 
 	@Override
 	public OpIterator[] getChildren() {
 		// some code goes here
-		return null;
+		return new OpIterator[] { this.child };
 	}
 
 	@Override
 	public void setChildren(OpIterator[] children) {
 		// some code goes here
+		if (children.length > 0) {
+			this.child = children[0];
+		}
 	}
 
 }

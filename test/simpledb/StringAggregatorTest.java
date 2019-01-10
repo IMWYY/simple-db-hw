@@ -52,7 +52,7 @@ public class StringAggregatorTest extends SimpleDbTestBase {
 	@Test
 	public void mergeCount() throws Exception {
 		scan1.open();
-		StringAggregator agg = new StringAggregator(0, Type.INT_TYPE, 1, Aggregator.Op.COUNT);
+		StringAggregator agg = new StringAggregator(0, Type.INT_TYPE, 1, Aggregator.Op.COUNT, new TupleDesc(new Type[]{Type.INT_TYPE, Type.INT_TYPE}));
 
 		for (int[] step : count) {
 			agg.mergeTupleIntoGroup(scan1.next());
@@ -69,7 +69,7 @@ public class StringAggregatorTest extends SimpleDbTestBase {
 	public void testIterator() throws Exception {
 		// first, populate the aggregator via sum over scan1
 		scan1.open();
-		StringAggregator agg = new StringAggregator(0, Type.INT_TYPE, 1, Aggregator.Op.COUNT);
+		StringAggregator agg = new StringAggregator(0, Type.INT_TYPE, 1, Aggregator.Op.COUNT, new TupleDesc(new Type[]{Type.INT_TYPE, Type.INT_TYPE}));
 		try {
 			while (true)
 				agg.mergeTupleIntoGroup(scan1.next());

@@ -30,7 +30,7 @@ public class TestUtil {
 	 */
 	public static TupleIterator createTupleList(int width, int[] tupdata) {
 		int i = 0;
-		ArrayList<Tuple> tuplist = new ArrayList<Tuple>();
+		ArrayList<Tuple> tuplist = new ArrayList<>();
 		while (i < tupdata.length) {
 			Tuple tup = new Tuple(Utility.getTupleDesc(width));
 			for (int j = 0; j < width; ++j)
@@ -140,14 +140,18 @@ public class TestUtil {
 			matched = false;
 			actual.rewind();
 
+			System.out.println("expected: " + expectedTup.toString() + " " + expectedTup.getTupleDesc().toString());
+
 			while (actual.hasNext()) {
 				Tuple next = actual.next();
+				System.out.println("actual: " + next + " " + next.getTupleDesc().toString());
 				if (compareTuples(expectedTup, next)) {
 					matched = true;
 					break;
 				}
 			}
 			if (!matched) {
+				System.out.println("expected: " + expectedTup.toString() + " " + expectedTup.getTupleDesc().toString());
 				throw new RuntimeException("expected tuple not found: " + expectedTup);
 			}
 		}

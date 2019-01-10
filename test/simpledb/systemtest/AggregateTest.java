@@ -76,7 +76,7 @@ public class AggregateTest extends SimpleDbTestBase {
 	private ArrayList<ArrayList<Integer>> aggregate(ArrayList<ArrayList<Integer>> tuples, Aggregator.Op operation,
 			int aggregateColumn, int groupColumn) {
 		// Group the values
-		HashMap<Integer, ArrayList<Integer>> values = new HashMap<Integer, ArrayList<Integer>>();
+		HashMap<Integer, ArrayList<Integer>> values = new HashMap<>();
 		for (ArrayList<Integer> t : tuples) {
 			Integer key = null;
 			if (groupColumn != Aggregator.NO_GROUPING)
@@ -88,9 +88,9 @@ public class AggregateTest extends SimpleDbTestBase {
 			values.get(key).add(value);
 		}
 
-		ArrayList<ArrayList<Integer>> results = new ArrayList<ArrayList<Integer>>();
+		ArrayList<ArrayList<Integer>> results = new ArrayList<>();
 		for (Map.Entry<Integer, ArrayList<Integer>> e : values.entrySet()) {
-			ArrayList<Integer> result = new ArrayList<Integer>();
+			ArrayList<Integer> result = new ArrayList<>();
 			if (groupColumn != Aggregator.NO_GROUPING)
 				result.add(e.getKey());
 			result.add(computeAggregate(e.getValue(), operation));
@@ -102,7 +102,7 @@ public class AggregateTest extends SimpleDbTestBase {
 	private void doAggregate(Aggregator.Op operation, int groupColumn)
 			throws IOException, DbException, TransactionAbortedException {
 		// Create the table
-		ArrayList<ArrayList<Integer>> createdTuples = new ArrayList<ArrayList<Integer>>();
+		ArrayList<ArrayList<Integer>> createdTuples = new ArrayList<>();
 		HeapFile table = SystemTestUtil.createRandomHeapFile(
 				COLUMNS, ROWS, MAX_VALUE, null, createdTuples);
 

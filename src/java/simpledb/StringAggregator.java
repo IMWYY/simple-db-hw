@@ -1,11 +1,24 @@
 package simpledb;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Knows how to compute some aggregate over a set of StringFields.
  */
 public class StringAggregator implements Aggregator {
 
 	private static final long serialVersionUID = 1L;
+
+	private int gbField;
+	private Type gbFieldType;
+	private int aField;
+	private Op op;
+	private TupleDesc td;
+
+	// 如果NO_GROUPING key设为IntField(0)
+	private Map<Field, Integer> aggResult;
 
 	/**
 	 * Aggregate constructor
@@ -17,8 +30,17 @@ public class StringAggregator implements Aggregator {
 	 * @throws IllegalArgumentException if what != COUNT
 	 */
 
-	public StringAggregator(int gbfield, Type gbfieldtype, int afield, Op what) {
+	public StringAggregator(int gbfield, Type gbfieldtype, int afield, Op what, TupleDesc td) {
 		// some code goes here
+		if (what != Op.COUNT) {
+			throw new IllegalArgumentException();
+		}
+		this.gbField = gbfield;
+		this.gbFieldType = gbfieldtype;
+		this.aField = afield;
+		this.op = what;
+		this.td = td;
+		this.aggResult = new HashMap<>();
 	}
 
 	/**
@@ -28,6 +50,19 @@ public class StringAggregator implements Aggregator {
 	 */
 	public void mergeTupleIntoGroup(Tuple tup) {
 		// some code goes here
+		Field groupField, aggField = tup.getField(this.aField);
+		if (this.gbField == NO_GROUPING) {
+			groupField = new IntField(0);
+		} else {
+			groupField = tup.getField(this.gbField);
+		}
+
+		if (!(aggField instanceof StringField)) {
+			throw new IllegalStateException();
+		}
+
+		int curCount = this.aggResult.getOrDefault(groupField, 0);
+		this.aggResult.put(groupField, curCount + 1);
 	}
 
 	/**
@@ -40,7 +75,18 @@ public class StringAggregator implements Aggregator {
 	 */
 	public OpIterator iterator() {
 		// some code goes here
-		throw new UnsupportedOperationException("please implement me for lab2");
+		ArrayList<Tuple> tuples = new ArrayList<>(this.aggResult.size());
+		for (Map.Entry<Field, Integer> entry : this.aggResult.entrySet()) {
+			Tuple t = new Tuple(td);
+			if (this.gbField == NO_GROUPING) {
+				t.setField(0, new IntField(entry.getValue()));
+			} else {
+				t.setField(0, entry.getKey());
+				t.setField(1, new IntField(entry.getValue()));
+			}
+			tuples.add(t);
+		}
+		return new TupleIterator(this.td, tuples);
 	}
 
 }
