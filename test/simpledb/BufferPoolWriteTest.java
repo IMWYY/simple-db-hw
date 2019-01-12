@@ -38,68 +38,68 @@ public class BufferPoolWriteTest extends TestUtil.CreateHeapFile {
 		Database.getBufferPool().transactionComplete(tid);
 	}
 
-//	/**
-//	 * Unit test for BufferPool.insertTuple()
-//	 */
-//	@Test
-//	@SuppressWarnings("all ")
-//	public void insertTuple() throws Exception {
-//		// we should be able to add 504 tuples on an empty page.
-//		for (int i = 0; i < 504; ++i) {
-//			Tuple t = Utility.getHeapTuple(i, 2);
-//			Database.getBufferPool().insertTuple(tid, empty.getId(), t);
-//			HeapPage p = (HeapPage) Database.getBufferPool()
-//					.getPage(tid, t.getRecordId().getPageId(), Permissions.READ_ONLY);
-//			assertEquals(504 - i - 1, p.getNumEmptySlots());
-//		}
-//
-//		// the next 504 additions should live on a new page
-//		for (int i = 0; i < 504; ++i) {
-//			Tuple t = Utility.getHeapTuple(i, 2);
-//			Database.getBufferPool().insertTuple(tid, empty.getId(), t);
-//			HeapPage p = (HeapPage) Database.getBufferPool()
-//					.getPage(tid, t.getRecordId().getPageId(), Permissions.READ_ONLY);
-//			assertEquals(504 - i - 1, p.getNumEmptySlots());
-//		}
-//	}
-//
-//	/**
-//	 * Unit test for BufferPool.deleteTuple()
-//	 */
-//	@Test
-//	public void deleteTuple() throws Exception {
-//
-//		// heap file should have ~10 pages
-//		HeapFile hf = SystemTestUtil.createRandomHeapFile(2, 504 * 10, null, null);
-//		DbFileIterator it = hf.iterator(tid);
-//		it.open();
-//
-//		ArrayList<Tuple> tuples = new ArrayList<Tuple>();
-//		while (it.hasNext()) {
-//			tuples.add(it.next());
-//		}
-//
-//		// clear the cache
-//		Database.resetBufferPool(BufferPool.DEFAULT_PAGES);
-//
-//		// delete 504 tuples from the first page
-//		for (int i = 0; i < 504; ++i) {
-//			Tuple t = tuples.get(i);
-//			Database.getBufferPool().deleteTuple(tid, t);
-//			HeapPage p = (HeapPage) Database.getBufferPool()
-//					.getPage(tid, t.getRecordId().getPageId(), Permissions.READ_ONLY);
-//			assertEquals(i + 1, p.getNumEmptySlots());
-//		}
-//
-//		// delete 504 tuples from the second page
-//		for (int i = 0; i < 504; ++i) {
-//			Tuple t = tuples.get(i + 504);
-//			Database.getBufferPool().deleteTuple(tid, t);
-//			HeapPage p = (HeapPage) Database.getBufferPool()
-//					.getPage(tid, t.getRecordId().getPageId(), Permissions.READ_ONLY);
-//			assertEquals(i + 1, p.getNumEmptySlots());
-//		}
-//	}
+	//	/**
+	//	 * Unit test for BufferPool.insertTuple()
+	//	 */
+	//	@Test
+	//	@SuppressWarnings("all ")
+	//	public void insertTuple() throws Exception {
+	//		// we should be able to add 504 tuples on an empty page.
+	//		for (int i = 0; i < 504; ++i) {
+	//			Tuple t = Utility.getHeapTuple(i, 2);
+	//			Database.getBufferPool().insertTuple(tid, empty.getId(), t);
+	//			HeapPage p = (HeapPage) Database.getBufferPool()
+	//					.getPage(tid, t.getRecordId().getPageId(), Permissions.READ_ONLY);
+	//			assertEquals(504 - i - 1, p.getNumEmptySlots());
+	//		}
+	//
+	//		// the next 504 additions should live on a new page
+	//		for (int i = 0; i < 504; ++i) {
+	//			Tuple t = Utility.getHeapTuple(i, 2);
+	//			Database.getBufferPool().insertTuple(tid, empty.getId(), t);
+	//			HeapPage p = (HeapPage) Database.getBufferPool()
+	//					.getPage(tid, t.getRecordId().getPageId(), Permissions.READ_ONLY);
+	//			assertEquals(504 - i - 1, p.getNumEmptySlots());
+	//		}
+	//	}
+	//
+	//	/**
+	//	 * Unit test for BufferPool.deleteTuple()
+	//	 */
+	//	@Test
+	//	public void deleteTuple() throws Exception {
+	//
+	//		// heap file should have ~10 pages
+	//		HeapFile hf = SystemTestUtil.createRandomHeapFile(2, 504 * 10, null, null);
+	//		DbFileIterator it = hf.iterator(tid);
+	//		it.open();
+	//
+	//		ArrayList<Tuple> tuples = new ArrayList<Tuple>();
+	//		while (it.hasNext()) {
+	//			tuples.add(it.next());
+	//		}
+	//
+	//		// clear the cache
+	//		Database.resetBufferPool(BufferPool.DEFAULT_PAGES);
+	//
+	//		// delete 504 tuples from the first page
+	//		for (int i = 0; i < 504; ++i) {
+	//			Tuple t = tuples.get(i);
+	//			Database.getBufferPool().deleteTuple(tid, t);
+	//			HeapPage p = (HeapPage) Database.getBufferPool()
+	//					.getPage(tid, t.getRecordId().getPageId(), Permissions.READ_ONLY);
+	//			assertEquals(i + 1, p.getNumEmptySlots());
+	//		}
+	//
+	//		// delete 504 tuples from the second page
+	//		for (int i = 0; i < 504; ++i) {
+	//			Tuple t = tuples.get(i + 504);
+	//			Database.getBufferPool().deleteTuple(tid, t);
+	//			HeapPage p = (HeapPage) Database.getBufferPool()
+	//					.getPage(tid, t.getRecordId().getPageId(), Permissions.READ_ONLY);
+	//			assertEquals(i + 1, p.getNumEmptySlots());
+	//		}
+	//	}
 
 	@Test
 	public void handleManyDirtyPages() throws Exception {
@@ -141,8 +141,13 @@ public class BufferPoolWriteTest extends TestUtil.CreateHeapFile {
 				byte[] emptyData = HeapPage.createEmptyPageData();
 				bw.write(emptyData);
 				bw.close();
-				HeapPage p = new HeapPage(new HeapPageId(super.getId(), super.numPages() - 1),
-						HeapPage.createEmptyPageData());
+				/**
+				 * FIXME: 这里原先的写法是直接new一个page，应该是有bug的？ write回磁盘后应该从bufferPool加载进内存，不然这个数据不会被存下来
+				 HeapPage p = new HeapPage(new HeapPageId(super.getId(), super.numPages() - 1), HeapPage.createEmptyPageData());
+				 */
+				HeapPage p = (HeapPage) Database.getBufferPool()
+						.getPage(tid, new HeapPageId(super.getId(), super.numPages() - 1), Permissions.READ_WRITE);
+
 				p.insertTuple(t);
 				dirtypages.add(p);
 			}
