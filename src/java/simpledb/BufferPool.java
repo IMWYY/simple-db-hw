@@ -2,7 +2,7 @@ package simpledb;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -28,9 +28,9 @@ public class BufferPool {
 	 */
 	private static final int DEFAULT_PAGE_SIZE = 4096;
 	private static int pageSize = DEFAULT_PAGE_SIZE;
-	private Map<PageId, Page> pages;
 
-	private int numPages;
+
+	private LRULinkedHashMap<PageId, Page> pages;
 
 	/**
 	 * Creates a BufferPool that caches up to numPages pages.
@@ -39,8 +39,8 @@ public class BufferPool {
 	 */
 	public BufferPool(int numPages) {
 		// some code goes here
-		this.numPages = numPages;
-		this.pages = new HashMap<>(this.numPages);
+		this.pages = new LRULinkedHashMap<>(numPages);
+
 	}
 
 	public static int getPageSize() {
@@ -79,9 +79,6 @@ public class BufferPool {
 		if (pages.containsKey(pid)) {
 			return pages.get(pid);
 		} else {
-			if (pages.size() >= this.numPages) {
-				throw new DbException("buffer is full");
-			}
 			DbFile dbFile = Database.getCatalog().getDatabaseFile(pid.getTableId());
 			Page p = dbFile.readPage(pid);
 			this.pages.put(pid, p);
@@ -193,7 +190,9 @@ public class BufferPool {
 	public synchronized void flushAllPages() throws IOException {
 		// some code goes here
 		// not necessary for lab1
-
+		for (Map.Entry<PageId, Page> entry : this.pages.entrySet()) {
+			flushPage(entry.getKey());
+		}
 	}
 
 	/**
@@ -208,6 +207,7 @@ public class BufferPool {
 	public synchronized void discardPage(PageId pid) {
 		// some code goes here
 		// not necessary for lab1
+		this.pages.remove(pid);
 	}
 
 	/**
@@ -218,6 +218,12 @@ public class BufferPool {
 	private synchronized void flushPage(PageId pid) throws IOException {
 		// some code goes here
 		// not necessary for lab1
+		Page dirtyPage = this.pages.get(pid);
+		if (dirtyPage != null) {
+			DbFile table = Database.getCatalog().getDatabaseFile(pid.getTableId());
+			table.writePage(dirtyPage);
+			dirtyPage.markDirty(false, null);
+		}
 	}
 
 	/**
@@ -235,6 +241,25 @@ public class BufferPool {
 	private synchronized void evictPage() throws DbException {
 		// some code goes here
 		// not necessary for lab1
+		// 用了LinkedHashMap 所以这里这个方法不用实现了
+	}
+
+	/**
+	 * 重写LinkedHashMap 实现LRU
+	 */
+	private class LRULinkedHashMap<K, V> extends LinkedHashMap<K, V> {
+
+		private int capacity;
+
+		LRULinkedHashMap(int capacity) {
+			super(capacity, 0.75f, true);
+			this.capacity = capacity;
+		}
+
+		@Override
+		protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
+			return this.size() > capacity;
+		}
 	}
 
 }
