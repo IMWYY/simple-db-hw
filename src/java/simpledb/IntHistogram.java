@@ -1,9 +1,19 @@
 package simpledb;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * A class to represent a fixed-width histogram over a single integer-based field.
  */
 public class IntHistogram {
+
+	private Map<Integer, Integer> histogram;
+	private int numTuples;
+	private int width;  //  the width of the bucket
+	private int min;
+	private int max;
+	private int buckets;
 
 	/**
 	 * Create a new IntHistogram.
@@ -23,6 +33,12 @@ public class IntHistogram {
 	 */
 	public IntHistogram(int buckets, int min, int max) {
 		// some code goes here
+		buckets = Math.min(buckets, max - min + 1);
+		this.histogram = new HashMap<>(buckets);
+		this.width = (max - min) / buckets + 1;
+		this.min = min;
+		this.max = max;
+		this.buckets = buckets;
 	}
 
 	/**
@@ -32,6 +48,9 @@ public class IntHistogram {
 	 */
 	public void addValue(int v) {
 		// some code goes here
+		int k = getBucketKey(v, true);
+		this.histogram.put(k, this.histogram.getOrDefault(k, 0) + 1);
+		this.numTuples++;  // 增加总的tuple数
 	}
 
 	/**
@@ -45,9 +64,43 @@ public class IntHistogram {
 	 * @return Predicted selectivity of this particular operator and value
 	 */
 	public double estimateSelectivity(Predicate.Op op, int v) {
-
 		// some code goes here
-		return -1.0;
+		int k = getBucketKey(v, false);
+		if (op == Predicate.Op.EQUALS) {
+			return (this.histogram.getOrDefault(k, 0) / (width * 1.0)) / this.numTuples;
+		} else if (op == Predicate.Op.NOT_EQUALS) {
+			return 1 - (this.histogram.getOrDefault(k, 0) / (width * 1.0)) / this.numTuples;
+		} else if (op == Predicate.Op.GREATER_THAN) {
+			double t = (this.histogram.getOrDefault(k, 0) / (width * 1.0)) * (k + width - v - 1);
+			for (int i = k + width; i < max + width; i += width) {
+				t += this.histogram.getOrDefault(i, 0);
+			}
+			return t / numTuples;
+		} else if (op == Predicate.Op.GREATER_THAN_OR_EQ) {
+//			double t = (this.histogram.getOrDefault(gk, 0) / (width * 1.0)) * (k + width - v);
+//			for (int i = k + width; i < max + width; i += width) {
+//				t += this.histogram.getOrDefault(i, 0);
+//			}
+//			return t / numTuples;
+			return estimateSelectivity(Predicate.Op.GREATER_THAN, v) + estimateSelectivity(Predicate.Op.EQUALS, v);
+		} else if (op == Predicate.Op.LESS_THAN) {
+			double t = (this.histogram.getOrDefault(k, 0) / (width * 1.0)) * (v - k);
+			for (int i = min; i < k; ++i) {
+				t += this.histogram.getOrDefault(i, 0);
+			}
+			return t / numTuples;
+		} else if (op == Predicate.Op.LESS_THAN_OR_EQ) {
+//			double t = (this.histogram.getOrDefault(k, 0) / (width * 1.0)) * (v - k + 1);
+//			for (int i = min; i < k; ++i) {
+//				t += this.histogram.getOrDefault(i, 0);
+//			}
+//			return t / numTuples;
+			return estimateSelectivity(Predicate.Op.LESS_THAN, v) + estimateSelectivity(Predicate.Op.EQUALS, v);
+		} else if (op == Predicate.Op.LIKE) {
+			return avgSelectivity();
+		}
+
+		throw new IllegalArgumentException();
 	}
 
 	/**
@@ -67,6 +120,33 @@ public class IntHistogram {
 	 */
 	public String toString() {
 		// some code goes here
-		return null;
+		StringBuilder sb = new StringBuilder();
+		for (Map.Entry<Integer, Integer> entry : this.histogram.entrySet()) {
+			sb.append("[").append(entry.getKey()).append("-").append(this.width - 1)
+					.append("]").append(":").append(entry.getValue()).append(";");
+		}
+		return sb.toString();
+	}
+
+	/**
+	 * 获取数据的key
+	 * @param v 需要获取key的value
+	 * @param isAdd 是否是添加数据 如果是添加需要把key控制在[min, max]
+	 */
+	private int getBucketKey(int v, boolean isAdd) {
+		if (!isAdd) {
+			if (v > this.max) {
+				return this.max + width;  // 为了实现这个key对应的value为0
+			} else if (v < this.min) {
+				return this.min - width;  // 为了实现这个key对应的value为0
+			}
+		}
+		for (int i = this.buckets-1; i >= -1; i--) {
+			int k = this.min + i * this.width;
+			if (v >= k) {
+				return k;
+			}
+		}
+		return min;
 	}
 }

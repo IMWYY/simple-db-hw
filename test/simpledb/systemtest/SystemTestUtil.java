@@ -45,17 +45,14 @@ public class SystemTestUtil {
 	/**
 	 * @param columnSpecification Mapping between column index and value.
 	 */
-	public static HeapFile createRandomHeapFile(
-			int columns, int rows, int maxValue, Map<Integer, Integer> columnSpecification,
-			ArrayList<ArrayList<Integer>> tuples)
+	public static HeapFile createRandomHeapFile(int columns, int rows, int maxValue,
+			Map<Integer, Integer> columnSpecification, ArrayList<ArrayList<Integer>> tuples)
 			throws IOException, DbException, TransactionAbortedException {
-		File temp = createRandomHeapFileUnopened(columns, rows, maxValue,
-				columnSpecification, tuples);
+		File temp = createRandomHeapFileUnopened(columns, rows, maxValue, columnSpecification, tuples);
 		return Utility.openHeapFile(columns, temp);
 	}
 
-	public static HeapFile createRandomHeapFile(
-			int columns, int rows, Map<Integer, Integer> columnSpecification,
+	public static HeapFile createRandomHeapFile(int columns, int rows, Map<Integer, Integer> columnSpecification,
 			ArrayList<ArrayList<Integer>> tuples, String colPrefix)
 			throws IOException, DbException, TransactionAbortedException {
 		return createRandomHeapFile(columns, rows, MAX_RAND_VALUE, columnSpecification, tuples, colPrefix);
@@ -70,8 +67,8 @@ public class SystemTestUtil {
 		return Utility.openHeapFile(columns, colPrefix, temp);
 	}
 
-	public static File createRandomHeapFileUnopened(int columns, int rows,
-			int maxValue, Map<Integer, Integer> columnSpecification,
+	public static File createRandomHeapFileUnopened(int columns, int rows, int maxValue,
+			Map<Integer, Integer> columnSpecification,
 			ArrayList<ArrayList<Integer>> tuples) throws IOException {
 		if (tuples != null) {
 			tuples.clear();
@@ -143,9 +140,9 @@ public class SystemTestUtil {
 			ArrayList<Integer> list = tupleToList(t);
 			boolean isExpected = copy.remove(list);
 			Debug.log("scanned tuple: %s (%s)", t, isExpected ? "expected" : "not expected");
-//			if (!isExpected) {
-//				Assert.fail("expected tuples does not contain: " + t);
-//			}
+			//			if (!isExpected) {
+			//				Assert.fail("expected tuples does not contain: " + t);
+			//			}
 		}
 		iterator.close();
 

@@ -20,7 +20,7 @@ public class TableStatsTest extends SimpleDbTestBase {
 	@Before
 	public void setUp() throws Exception {
 		super.setUp();
-		this.tuples = new ArrayList<ArrayList<Integer>>();
+		this.tuples = new ArrayList<>();
 		this.f = SystemTestUtil.createRandomHeapFile(10, 10200, 32, null, tuples);
 
 		this.tableName = SystemTestUtil.getUUID();
