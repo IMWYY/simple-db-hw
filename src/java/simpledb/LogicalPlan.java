@@ -43,13 +43,13 @@ public class LogicalPlan {
 	 * Constructor -- generate an empty logical plan
 	 */
 	public LogicalPlan() {
-		joins = new Vector<LogicalJoinNode>();
-		filters = new Vector<LogicalFilterNode>();
-		tables = new Vector<LogicalScanNode>();
-		subplanMap = new HashMap<String, OpIterator>();
-		tableMap = new HashMap<String, Integer>();
+		joins = new Vector<>();
+		filters = new Vector<>();
+		tables = new Vector<>();
+		subplanMap = new HashMap<>();
+		tableMap = new HashMap<>();
 
-		selectList = new Vector<LogicalSelectListNode>();
+		selectList = new Vector<>();
 		this.query = "";
 	}
 
@@ -80,7 +80,7 @@ public class LogicalPlan {
 
 		TupleDesc td = new TupleDesc(types, names);
 		TableStats ts;
-		HashMap<String, TableStats> tableMap = new HashMap<String, TableStats>();
+		HashMap<String, TableStats> tableMap = new HashMap<>();
 
 		// create the tables, associate them with the data files
 		// and tell the catalog about the schema  the tables.
@@ -381,9 +381,9 @@ public class LogicalPlan {
 	public OpIterator physicalPlan(TransactionId t, Map<String, TableStats> baseTableStats, boolean explain)
 			throws ParsingException {
 		Iterator<LogicalScanNode> tableIt = tables.iterator();
-		HashMap<String, String> equivMap = new HashMap<String, String>();
-		HashMap<String, Double> filterSelectivities = new HashMap<String, Double>();
-		HashMap<String, TableStats> statsMap = new HashMap<String, TableStats>();
+		HashMap<String, String> equivMap = new HashMap<>();
+		HashMap<String, Double> filterSelectivities = new HashMap<>();
+		HashMap<String, TableStats> statsMap = new HashMap<>();
 
 		while (tableIt.hasNext()) {
 			LogicalScanNode table = tableIt.next();
@@ -502,7 +502,7 @@ public class LogicalPlan {
 			throw new ParsingException("Query does not include join expressions joining all nodes!");
 		}
 
-		OpIterator node = (OpIterator) (subplanMap.entrySet().iterator().next().getValue());
+		OpIterator node = subplanMap.entrySet().iterator().next().getValue();
 
 		//walk the select list, to determine order in which to project output fields
 		ArrayList<Integer> outFields = new ArrayList<Integer>();
@@ -562,9 +562,7 @@ public class LogicalPlan {
 						td.fieldNameToIndex(aggField),
 						groupByField == null ? Aggregator.NO_GROUPING : td.fieldNameToIndex(groupByField),
 						getAggOp(aggOp));
-			} catch (NoSuchElementException e) {
-				throw new simpledb.ParsingException(e);
-			} catch (IllegalArgumentException e) {
+			} catch (NoSuchElementException | IllegalArgumentException e) {
 				throw new simpledb.ParsingException(e);
 			}
 			node = aggNode;

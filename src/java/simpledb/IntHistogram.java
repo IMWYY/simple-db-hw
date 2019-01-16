@@ -77,11 +77,6 @@ public class IntHistogram {
 			}
 			return t / numTuples;
 		} else if (op == Predicate.Op.GREATER_THAN_OR_EQ) {
-//			double t = (this.histogram.getOrDefault(gk, 0) / (width * 1.0)) * (k + width - v);
-//			for (int i = k + width; i < max + width; i += width) {
-//				t += this.histogram.getOrDefault(i, 0);
-//			}
-//			return t / numTuples;
 			return estimateSelectivity(Predicate.Op.GREATER_THAN, v) + estimateSelectivity(Predicate.Op.EQUALS, v);
 		} else if (op == Predicate.Op.LESS_THAN) {
 			double t = (this.histogram.getOrDefault(k, 0) / (width * 1.0)) * (v - k);
@@ -90,11 +85,6 @@ public class IntHistogram {
 			}
 			return t / numTuples;
 		} else if (op == Predicate.Op.LESS_THAN_OR_EQ) {
-//			double t = (this.histogram.getOrDefault(k, 0) / (width * 1.0)) * (v - k + 1);
-//			for (int i = min; i < k; ++i) {
-//				t += this.histogram.getOrDefault(i, 0);
-//			}
-//			return t / numTuples;
 			return estimateSelectivity(Predicate.Op.LESS_THAN, v) + estimateSelectivity(Predicate.Op.EQUALS, v);
 		} else if (op == Predicate.Op.LIKE) {
 			return avgSelectivity();

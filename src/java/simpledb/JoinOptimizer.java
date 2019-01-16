@@ -16,19 +16,6 @@ import java.util.Vector;
  * logical plan.
  */
 public class JoinOptimizer {
-	LogicalPlan p;
-	Vector<LogicalJoinNode> joins;
-
-	/**
-	 * Constructor
-	 *
-	 * @param p     the logical plan being optimized
-	 * @param joins the list of joins being performed
-	 */
-	public JoinOptimizer(LogicalPlan p, Vector<LogicalJoinNode> joins) {
-		this.p = p;
-		this.joins = joins;
-	}
 
 	/**
 	 * Return best iterator for computing a given logical join, given the
@@ -42,10 +29,10 @@ public class JoinOptimizer {
 	 * @param plan1 The left join node's child
 	 * @param plan2 The right join node's child
 	 */
-	public static OpIterator instantiateJoin(LogicalJoinNode lj,
-			OpIterator plan1, OpIterator plan2) throws ParsingException {
+	public static OpIterator instantiateJoin(LogicalJoinNode lj, OpIterator plan1, OpIterator plan2)
+			throws ParsingException {
 
-		int t1id = 0, t2id = 0;
+		int t1id, t2id;
 		OpIterator j;
 
 		try {
@@ -58,11 +45,9 @@ public class JoinOptimizer {
 			t2id = 0;
 		} else {
 			try {
-				t2id = plan2.getTupleDesc().fieldNameToIndex(
-						lj.f2QuantifiedName);
+				t2id = plan2.getTupleDesc().fieldNameToIndex(lj.f2QuantifiedName);
 			} catch (NoSuchElementException e) {
-				throw new ParsingException("Unknown field "
-						+ lj.f2QuantifiedName);
+				throw new ParsingException("Unknown field " + lj.f2QuantifiedName);
 			}
 		}
 
@@ -71,19 +56,53 @@ public class JoinOptimizer {
 		j = new Join(p, plan1, plan2);
 
 		return j;
+	}
 
+	private LogicalPlan p;
+	private Vector<LogicalJoinNode> joins;
+
+	/**
+	 * Constructor
+	 *
+	 * @param p     the logical plan being optimized
+	 * @param joins the list of joins being performed
+	 */
+	public JoinOptimizer(LogicalPlan p, Vector<LogicalJoinNode> joins) {
+		this.p = p;
+		this.joins = joins;
 	}
 
 	/**
 	 * Estimate the join cardinality of two tables.
 	 */
-	public static int estimateTableJoinCardinality(Predicate.Op joinOp,
-			String table1Alias, String table2Alias, String field1PureName,
-			String field2PureName, int card1, int card2, boolean t1pkey,
-			boolean t2pkey, Map<String, TableStats> stats,
-			Map<String, Integer> tableAliasToId) {
-		int card = 1;
+	public static int estimateTableJoinCardinality(Predicate.Op joinOp, String table1Alias, String table2Alias,
+			String field1PureName, String field2PureName, int card1, int card2, boolean t1pkey, boolean t2pkey,
+			Map<String, TableStats> stats, Map<String, Integer> tableAliasToId) {
 		// some code goes here
+		int card;
+		int small = card1 < card2 ? card1 : card2, big = card1 > card2 ? card1 : card2;
+		switch (joinOp) {
+		case EQUALS:
+			if (t1pkey && t2pkey) {
+				card = small;
+			} else if (t1pkey) {
+				card = card2;
+			} else if (t2pkey) {
+				card = card1;
+			} else {
+				card = big;
+			}
+			break;
+		case LESS_THAN_OR_EQ:
+		case LESS_THAN:
+		case GREATER_THAN:
+		case GREATER_THAN_OR_EQ:
+			card = (int) (card1 * card2 * 0.3);
+			break;
+		default:
+			card = card1 * card2;
+			break;
+		}
 		return card <= 0 ? 1 : card;
 	}
 
@@ -107,8 +126,7 @@ public class JoinOptimizer {
 	 * @return An estimate of the cost of this query, in terms of cost1 and
 	 * cost2
 	 */
-	public double estimateJoinCost(LogicalJoinNode j, int card1, int card2,
-			double cost1, double cost2) {
+	public double estimateJoinCost(LogicalJoinNode j, int card1, int card2, double cost1, double cost2) {
 		if (j instanceof LogicalSubplanJoinNode) {
 			// A LogicalSubplanJoinNode represents a subquery.
 			// You do not need to implement proper support for these for Lab 3.
@@ -116,9 +134,12 @@ public class JoinOptimizer {
 		} else {
 			// Insert your code here.
 			// HINT: You may need to use the variable "j" if you implemented
-			// a join algorithm that's more complicated than a basic
-			// nested-loops join.
-			return -1.0;
+			// a join algorithm that's more complicated than a basic nested-loops join.
+			//
+			// joincost(t1 join t2) = scancost(t1) + ntups(t1) x scancost(t2) //IO cost
+			//                       + ntups(t1) x ntups(t2)  //CPU cost
+
+			return cost1  + card1 * cost2 + card1 * card2;
 		}
 	}
 
@@ -135,8 +156,8 @@ public class JoinOptimizer {
 	 * @param stats  The table stats, referenced by table names, not alias
 	 * @return The cardinality of the join
 	 */
-	public int estimateJoinCardinality(LogicalJoinNode j, int card1, int card2,
-			boolean t1pkey, boolean t2pkey, Map<String, TableStats> stats) {
+	public int estimateJoinCardinality(LogicalJoinNode j, int card1, int card2, boolean t1pkey, boolean t2pkey,
+			Map<String, TableStats> stats) {
 		if (j instanceof LogicalSubplanJoinNode) {
 			// A LogicalSubplanJoinNode represents a subquery.
 			// You do not need to implement proper support for these for Lab 3.
@@ -158,13 +179,13 @@ public class JoinOptimizer {
 	 */
 	@SuppressWarnings("unchecked")
 	public <T> Set<Set<T>> enumerateSubsets(Vector<T> v, int size) {
-		Set<Set<T>> els = new HashSet<Set<T>>();
-		els.add(new HashSet<T>());
+		Set<Set<T>> els = new HashSet<>();
+		els.add(new HashSet<>());
 		// Iterator<Set> it;
 		// long start = System.currentTimeMillis();
 
 		for (int i = 0; i < size; i++) {
-			Set<Set<T>> newels = new HashSet<Set<T>>();
+			Set<Set<T>> newels = new HashSet<>();
 			for (Set<T> s : els) {
 				for (T t : v) {
 					Set<T> news = (Set<T>) (((HashSet<T>) s).clone());
@@ -195,10 +216,8 @@ public class JoinOptimizer {
 	 * @throws ParsingException when stats or filter selectivities is missing a table in the
 	 *                          join, or or when another internal error occurs
 	 */
-	public Vector<LogicalJoinNode> orderJoins(
-			HashMap<String, TableStats> stats,
-			HashMap<String, Double> filterSelectivities, boolean explain)
-			throws ParsingException {
+	public Vector<LogicalJoinNode> orderJoins(HashMap<String, TableStats> stats,
+			HashMap<String, Double> filterSelectivities, boolean explain) throws ParsingException {
 		//Not necessary for labs 1--3
 
 		// some code goes here
@@ -232,10 +251,8 @@ public class JoinOptimizer {
 	 *                          tables involved in join
 	 */
 	@SuppressWarnings("unchecked")
-	private CostCard computeCostAndCardOfSubplan(
-			HashMap<String, TableStats> stats,
-			HashMap<String, Double> filterSelectivities,
-			LogicalJoinNode joinToRemove, Set<LogicalJoinNode> joinSet,
+	private CostCard computeCostAndCardOfSubplan(HashMap<String, TableStats> stats,
+			HashMap<String, Double> filterSelectivities, LogicalJoinNode joinToRemove, Set<LogicalJoinNode> joinSet,
 			double bestCostSoFar, PlanCache pc) throws ParsingException {
 
 		LogicalJoinNode j = joinToRemove;
