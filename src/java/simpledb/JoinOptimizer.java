@@ -3,6 +3,7 @@ package simpledb;
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
+import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -182,22 +183,41 @@ public class JoinOptimizer {
 		Set<Set<T>> els = new HashSet<>();
 		els.add(new HashSet<>());
 
+		// 构造ele到index的映射
+		Map<T, Integer> ele2Index = new HashMap<>();
+		for (int i = 0; i < v.size(); ++i) {
+			ele2Index.put(v.get(i), i);
+		}
+
 		// for size遍，最终返回的set里的set的长度都是size
 		for (int i = 0; i < size; i++) {
 			Set<Set<T>> newels = new HashSet<>();
 			// newels的构成：对于els中的每个set s，遍历v中的元素t，如果t是作为新元素加入s，那么将更新后的s加入到newels
 			for (Set<T> s : els) {
-				for (T t : v) {
-					Set<T> news = (Set<T>) (((HashSet<T>) s).clone());// 这里会clone太多无用的对象
-					if (news.add(t))
-						newels.add(news);
+				BitSet bitSet = constructBitSet(v, s, ele2Index);
+				for (int j = 0; j < v.size(); ++j) {
+					if (!bitSet.get(j)) {
+						T t = v.get(j);
+						Set<T> news = (Set<T>) (((HashSet<T>) s).clone());// 这里会clone太多无用的对象
+						if (news.add(t))
+							newels.add(news);
+					}
 				}
 			}
 			els = newels;
 		}
-
 		return els;
+	}
 
+	/**
+	 * 优化 用bitset记录那些元素已经被添加进了els
+	 */
+	private <T> BitSet constructBitSet(Vector<T> v, Set<T> els, Map<T, Integer> ele2Index) {
+		BitSet res = new BitSet(v.size());
+		for (T t : els) {
+			res.set(ele2Index.get(t));
+		}
+		return res;
 	}
 
 	/**
