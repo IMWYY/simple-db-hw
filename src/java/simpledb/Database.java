@@ -67,13 +67,7 @@ public class Database {
 			bufferPoolF = Database.class.getDeclaredField("_bufferpool");
 			bufferPoolF.setAccessible(true);
 			bufferPoolF.set(_instance.get(), new BufferPool(pages));
-		} catch (NoSuchFieldException e) {
-			e.printStackTrace();
-		} catch (SecurityException e) {
-			e.printStackTrace();
-		} catch (IllegalArgumentException e) {
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
+		} catch (NoSuchFieldException | SecurityException | IllegalAccessException | IllegalArgumentException e) {
 			e.printStackTrace();
 		}
 		//        _instance._bufferpool = new BufferPool(pages);

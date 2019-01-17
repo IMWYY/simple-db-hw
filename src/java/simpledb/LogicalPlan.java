@@ -23,6 +23,65 @@ import java.util.Vector;
  * best implementations for joins.
  */
 public class LogicalPlan {
+
+	public static void main(String argv[]) {
+		// construct a 3-column table schema
+		Type types[] = new Type[] { Type.INT_TYPE, Type.INT_TYPE, Type.INT_TYPE };
+		String names[] = new String[] { "field0", "field1", "field2" };
+
+		TupleDesc td = new TupleDesc(types, names);
+		TableStats ts;
+		HashMap<String, TableStats> tableMap = new HashMap<>();
+
+		// create the tables, associate them with the data files
+		// and tell the catalog about the schema  the tables.
+		HeapFile table1 = new HeapFile(new File("some_data_file1.dat"), td);
+		Database.getCatalog().addTable(table1, "t1");
+		ts = new TableStats(table1.getId(), 1);
+		tableMap.put("t1", ts);
+
+		TransactionId tid = new TransactionId();
+		LogicalPlan lp = new LogicalPlan();
+		lp.addScan(table1.getId(), "t1");
+
+		try {
+			lp.addFilter("t1.field0", Predicate.Op.GREATER_THAN, "1");
+		} catch (Exception ignored) {
+		}
+
+        /*
+        SeqScan ss1 = new SeqScan(tid, table1.getId(), "t1");
+        SeqScan ss2 = new SeqScan(tid, table2.getId(), "t2");
+
+        // create a filter for the where condition
+        Filter sf1 = new Filter(new Predicate(0, Predicate.Op.GREATER_THAN, new IntField(1)),  ss1);
+
+        JoinPredicate p = new JoinPredicate(1, Predicate.Op.EQUALS, 1);
+        Join j = new Join(p, sf1, ss2);
+        */
+		OpIterator j = null;
+		try {
+			j = lp.physicalPlan(tid, tableMap, false);
+		} catch (ParsingException e) {
+			e.printStackTrace();
+			System.exit(0);
+		}
+		// and run it
+		try {
+			j.open();
+			while (j.hasNext()) {
+				Tuple tup = j.next();
+				System.out.println(tup);
+			}
+			j.close();
+			Database.getBufferPool().transactionComplete(tid);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+
 	private Vector<LogicalJoinNode> joins;
 	private Vector<LogicalScanNode> tables;
 	private Vector<LogicalFilterNode> filters;
@@ -71,68 +130,6 @@ public class LogicalPlan {
 		if (s.equals("MAX"))
 			return Aggregator.Op.MAX;
 		throw new ParsingException("Unknown predicate " + s);
-	}
-
-	public static void main(String argv[]) {
-		// construct a 3-column table schema
-		Type types[] = new Type[] { Type.INT_TYPE, Type.INT_TYPE, Type.INT_TYPE };
-		String names[] = new String[] { "field0", "field1", "field2" };
-
-		TupleDesc td = new TupleDesc(types, names);
-		TableStats ts;
-		HashMap<String, TableStats> tableMap = new HashMap<>();
-
-		// create the tables, associate them with the data files
-		// and tell the catalog about the schema  the tables.
-		HeapFile table1 = new HeapFile(new File("some_data_file1.dat"), td);
-		Database.getCatalog().addTable(table1, "t1");
-		ts = new TableStats(table1.getId(), 1);
-		tableMap.put("t1", ts);
-
-		TransactionId tid = new TransactionId();
-
-		LogicalPlan lp = new LogicalPlan();
-
-		lp.addScan(table1.getId(), "t1");
-
-		try {
-			lp.addFilter("t1.field0", Predicate.Op.GREATER_THAN, "1");
-		} catch (Exception e) {
-		}
-
-        /*
-        SeqScan ss1 = new SeqScan(tid, table1.getId(), "t1");
-        SeqScan ss2 = new SeqScan(tid, table2.getId(), "t2");
-
-        // create a filter for the where condition
-        Filter sf1 = new Filter(
-                                new Predicate(0,
-                                Predicate.Op.GREATER_THAN, new IntField(1)),  ss1);
-
-        JoinPredicate p = new JoinPredicate(1, Predicate.Op.EQUALS, 1);
-        Join j = new Join(p, sf1, ss2);
-        */
-		OpIterator j = null;
-		try {
-			j = lp.physicalPlan(tid, tableMap, false);
-		} catch (ParsingException e) {
-			e.printStackTrace();
-			System.exit(0);
-		}
-		// and run it
-		try {
-			j.open();
-			while (j.hasNext()) {
-				Tuple tup = j.next();
-				System.out.println(tup);
-			}
-			j.close();
-			Database.getBufferPool().transactionComplete(tid);
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
 	}
 
 	/**
@@ -184,8 +181,7 @@ public class LogicalPlan {
 	 *                          added via {@link #addScan} or if field is ambiguous (e.g., two
 	 *                          tables contain a field named field.)
 	 */
-	public void addFilter(String field, Predicate.Op p, String
-			constantValue) throws ParsingException {
+	public void addFilter(String field, Predicate.Op p, String constantValue) throws ParsingException {
 
 		field = disambiguateName(field);
 		String table = field.split("[.]")[0];
@@ -380,14 +376,15 @@ public class LogicalPlan {
 	 */
 	public OpIterator physicalPlan(TransactionId t, Map<String, TableStats> baseTableStats, boolean explain)
 			throws ParsingException {
-		Iterator<LogicalScanNode> tableIt = tables.iterator();
 		HashMap<String, String> equivMap = new HashMap<>();
 		HashMap<String, Double> filterSelectivities = new HashMap<>();
 		HashMap<String, TableStats> statsMap = new HashMap<>();
 
+		// 1. SeqScan Node
+		Iterator<LogicalScanNode> tableIt = tables.iterator();
 		while (tableIt.hasNext()) {
 			LogicalScanNode table = tableIt.next();
-			SeqScan ss = null;
+			SeqScan ss;
 			try {
 				ss = new SeqScan(t, Database.getCatalog().getDatabaseFile(table.t).getId(), table.alias);
 			} catch (NoSuchElementException e) {
@@ -398,9 +395,9 @@ public class LogicalPlan {
 			String baseTableName = Database.getCatalog().getTableName(table.t);
 			statsMap.put(baseTableName, baseTableStats.get(baseTableName));
 			filterSelectivities.put(table.alias, 1.0);
-
 		}
 
+		// 2. Filter Node
 		Iterator<LogicalFilterNode> filterIt = filters.iterator();
 		while (filterIt.hasNext()) {
 			LogicalFilterNode lf = filterIt.next();
@@ -419,11 +416,11 @@ public class LogicalPlan {
 				throw new ParsingException("Unknown field in filter expression " + lf.fieldQuantifiedName);
 			}
 			if (ftyp == Type.INT_TYPE)
-				f = new IntField(new Integer(lf.c).intValue());
+				f = new IntField(new Integer(lf.c));
 			else
 				f = new StringField(lf.c, Type.STRING_LEN);
 
-			Predicate p = null;
+			Predicate p;
 			try {
 				p = new Predicate(subplan.getTupleDesc().fieldNameToIndex(lf.fieldQuantifiedName), lf.p, f);
 			} catch (NoSuchElementException e) {
@@ -433,18 +430,17 @@ public class LogicalPlan {
 
 			TableStats s = statsMap.get(Database.getCatalog().getTableName(this.getTableId(lf.tableAlias)));
 
-			double sel = s
-					.estimateSelectivity(subplan.getTupleDesc().fieldNameToIndex(lf.fieldQuantifiedName), lf.p, f);
+			double sel = s.estimateSelectivity(subplan.getTupleDesc().fieldNameToIndex(lf.fieldQuantifiedName), lf.p, f);
 			filterSelectivities.put(lf.tableAlias, filterSelectivities.get(lf.tableAlias) * sel);
 
 			//s.addSelectivityFactor(estimateFilterSelectivity(lf,statsMap));
 		}
 
+		// 3. Handle Join via Join Optimizer
 		JoinOptimizer jo = new JoinOptimizer(this, joins);
-
 		joins = jo.orderJoins(statsMap, filterSelectivities, explain);
-
 		Iterator<LogicalJoinNode> joinIt = joins.iterator();
+
 		while (joinIt.hasNext()) {
 			LogicalJoinNode lj = joinIt.next();
 			OpIterator plan1;
@@ -478,12 +474,13 @@ public class LogicalPlan {
 				throw new ParsingException("Unknown table in WHERE clause " + lj.t2Alias);
 
 			OpIterator j;
-			j = jo.instantiateJoin(lj, plan1, plan2);
+			j = JoinOptimizer.instantiateJoin(lj, plan1, plan2);
 			subplanMap.put(t1name, j);
 
 			if (!isSubqueryJoin) {
 				subplanMap.remove(t2name);
-				equivMap.put(t2name, t1name);  //keep track of the fact that this new node contains both tables
+				equivMap.put(t2name, t1name);
+				//keep track of the fact that this new node contains both tables
 				//make sure anything that was equiv to lj.t2 (which we are just removed) is
 				// marked as equiv to lj.t1 (which we are replacing lj.t2 with.)
 				for (java.util.Map.Entry<String, String> s : equivMap.entrySet()) {
@@ -504,17 +501,16 @@ public class LogicalPlan {
 
 		OpIterator node = subplanMap.entrySet().iterator().next().getValue();
 
+		// 4. Handle Projection
 		//walk the select list, to determine order in which to project output fields
-		ArrayList<Integer> outFields = new ArrayList<Integer>();
-		ArrayList<Type> outTypes = new ArrayList<Type>();
+		ArrayList<Integer> outFields = new ArrayList<>();
+		ArrayList<Type> outTypes = new ArrayList<>();
 		for (int i = 0; i < selectList.size(); i++) {
 			LogicalSelectListNode si = selectList.elementAt(i);
 			if (si.aggOp != null) {
 				outFields.add(groupByField != null ? 1 : 0);
 				TupleDesc td = node.getTupleDesc();
-				//                int  id;
 				try {
-					//                    id =
 					td.fieldNameToIndex(si.fname);
 				} catch (NoSuchElementException e) {
 					throw new ParsingException("Unknown field " + si.fname + " in SELECT list");
@@ -554,12 +550,12 @@ public class LogicalPlan {
 			}
 		}
 
+		// 5. Handle Aggregate
 		if (hasAgg) {
 			TupleDesc td = node.getTupleDesc();
 			Aggregate aggNode;
 			try {
-				aggNode = new Aggregate(node,
-						td.fieldNameToIndex(aggField),
+				aggNode = new Aggregate(node, td.fieldNameToIndex(aggField),
 						groupByField == null ? Aggregator.NO_GROUPING : td.fieldNameToIndex(groupByField),
 						getAggOp(aggOp));
 			} catch (NoSuchElementException | IllegalArgumentException e) {
@@ -568,6 +564,7 @@ public class LogicalPlan {
 			node = aggNode;
 		}
 
+		// 6. Handle OrderBy
 		if (hasOrderBy) {
 			node = new OrderBy(node.getTupleDesc().fieldNameToIndex(oByField), oByAsc, node);
 		}

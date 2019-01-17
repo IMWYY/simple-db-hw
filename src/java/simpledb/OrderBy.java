@@ -51,13 +51,12 @@ public class OrderBy extends Operator {
 		return td;
 	}
 
-	public void open() throws DbException, NoSuchElementException,
-			TransactionAbortedException {
+	public void open() throws DbException, NoSuchElementException, TransactionAbortedException {
 		child.open();
 		// load all the tuples in a collection, and sort it
 		while (child.hasNext())
-			childTups.add((Tuple) child.next());
-		Collections.sort(childTups, new TupleComparator(orderByField, asc));
+			childTups.add(child.next());
+		childTups.sort(new TupleComparator(orderByField, asc));
 		it = childTups.iterator();
 		super.open();
 	}
@@ -78,8 +77,7 @@ public class OrderBy extends Operator {
 	 * @return The next tuple in the ordering, or null if there are no more
 	 * tuples
 	 */
-	protected Tuple fetchNext() throws NoSuchElementException,
-			TransactionAbortedException, DbException {
+	protected Tuple fetchNext() throws NoSuchElementException, TransactionAbortedException, DbException {
 		if (it != null && it.hasNext()) {
 			return it.next();
 		} else

@@ -182,11 +182,14 @@ public class Catalog {
 				for (String e : els) {
 					String[] els2 = e.trim().split(" ");
 					names.add(els2[0].trim());
-					if (els2[1].trim().toLowerCase().equals("int"))
+					switch (els2[1].trim().toLowerCase()) {
+					case "int":
 						types.add(Type.INT_TYPE);
-					else if (els2[1].trim().toLowerCase().equals("string"))
+						break;
+					case "string":
 						types.add(Type.STRING_TYPE);
-					else {
+						break;
+					default:
 						System.out.println("Unknown type " + els2[1]);
 						System.exit(0);
 					}
