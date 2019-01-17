@@ -188,7 +188,7 @@ public class JoinOptimizer {
 			// newels的构成：对于els中的每个set s，遍历v中的元素t，如果t是作为新元素加入s，那么将更新后的s加入到newels
 			for (Set<T> s : els) {
 				for (T t : v) {
-					Set<T> news = (Set<T>) (((HashSet<T>) s).clone());
+					Set<T> news = (Set<T>) (((HashSet<T>) s).clone());// 这里会clone太多无用的对象
 					if (news.add(t))
 						newels.add(news);
 				}
@@ -449,9 +449,7 @@ public class JoinOptimizer {
 		// Set the default close operation for the window,
 		// or else the program won't exit when clicking close button
 		f.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-
 		f.setVisible(true);
-
 		f.setSize(300, 500);
 
 		HashMap<String, DefaultMutableTreeNode> m = new HashMap<>();
@@ -520,7 +518,6 @@ public class JoinOptimizer {
 					m.put(key, root);
 				}
 			}
-
 			treetop = root;
 		}
 
@@ -549,7 +546,5 @@ public class JoinOptimizer {
 		}
 
 		f.pack();
-
 	}
-
 }
