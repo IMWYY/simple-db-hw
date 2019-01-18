@@ -1,5 +1,6 @@
 package simpledb;
 
+import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -28,7 +29,6 @@ public class BufferPool {
 	 */
 	private static final int DEFAULT_PAGE_SIZE = 4096;
 	private static int pageSize = DEFAULT_PAGE_SIZE;
-
 
 	private LRULinkedHashMap<PageId, Page> pages;
 
@@ -75,15 +75,14 @@ public class BufferPool {
 	public Page getPage(TransactionId tid, PageId pid, Permissions perm)
 			throws TransactionAbortedException, DbException {
 		// some code goes here
-		// todo key lock
-		if (pages.containsKey(pid)) {
-			return pages.get(pid);
-		} else {
+		if (!pages.containsKey(pid)) {
 			DbFile dbFile = Database.getCatalog().getDatabaseFile(pid.getTableId());
 			Page p = dbFile.readPage(pid);
 			this.pages.put(pid, p);
-			return p;
 		}
+
+		Database.getLockManager().acquireLock(tid, pid, perm);
+		return pages.get(pid);
 	}
 
 	/**
@@ -98,6 +97,7 @@ public class BufferPool {
 	public void releasePage(TransactionId tid, PageId pid) {
 		// some code goes here
 		// not necessary for lab1|lab2
+		Database.getLockManager().releaseLock(tid, pid);
 	}
 
 	/**
@@ -116,7 +116,7 @@ public class BufferPool {
 	public boolean holdsLock(TransactionId tid, PageId p) {
 		// some code goes here
 		// not necessary for lab1|lab2
-		return false;
+		return Database.getLockManager().holdsLock(tid, p);
 	}
 
 	/**

@@ -20,11 +20,13 @@ public class Database {
 	private static AtomicReference<Database> _instance = new AtomicReference<>(new Database());
 	private final Catalog _catalog;
 	private final BufferPool _bufferpool;
+	private final LockManager _lockManager;
 	private final LogFile _logfile;
 
 	private Database() {
 		_catalog = new Catalog();
 		_bufferpool = new BufferPool(BufferPool.DEFAULT_PAGES);
+		_lockManager = new LockManager();
 		LogFile tmp = null;
 		try {
 			tmp = new LogFile(new File(LOGFILENAME));
@@ -57,6 +59,12 @@ public class Database {
 		return _instance.get()._catalog;
 	}
 
+	/**
+	 * Return the lockManager of the static Database instance
+	 */
+	public static LockManager getLockManager() {
+		return _instance.get()._lockManager;
+	}
 	/**
 	 * Method used for testing -- create a new instance of the buffer pool and
 	 * return it
