@@ -10,8 +10,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class LockManager {
 
-	ConcurrentHashMap<PageId, List<LockNode>> lockState;
-	ConcurrentHashMap<PageId, Object> synchronizeControl;
+	private ConcurrentHashMap<PageId, List<LockNode>> lockState;
+	private ConcurrentHashMap<PageId, Object> synchronizeControl;
 
 	public LockManager() {
 		this.lockState = new ConcurrentHashMap<>();
@@ -42,6 +42,7 @@ public class LockManager {
 						return true;
 					}
 					// 加X锁 如果有该事务的S锁可以直接升级
+					// todo 不能直接升级 需要查看有没有其他S锁
 				} else {
 					boolean canUpdateLock = true;
 					for (LockNode n : lockState.get(pid)) {
