@@ -2,8 +2,7 @@ package simpledb;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.Iterator;
 
 /**
  * BufferPool manages the reading and writing of pages into memory from
@@ -29,7 +28,7 @@ public class BufferPool {
 	private static final int DEFAULT_PAGE_SIZE = 4096;
 	private static int pageSize = DEFAULT_PAGE_SIZE;
 
-	private LRULinkedHashMap<PageId, Page> pages;
+	private PageLruCache pages;
 
 	/**
 	 * Creates a BufferPool that caches up to numPages pages.
@@ -38,7 +37,7 @@ public class BufferPool {
 	 */
 	public BufferPool(int numPages) {
 		// some code goes here
-		this.pages = new LRULinkedHashMap<>(numPages);
+		this.pages = new PageLruCache(numPages);
 
 	}
 
@@ -192,10 +191,12 @@ public class BufferPool {
 	public synchronized void flushAllPages() throws IOException {
 		// some code goes here
 		// not necessary for lab1
-		for (Map.Entry<PageId, Page> entry : this.pages.entrySet()) {
-			Page dirtyPage = entry.getValue();
+		Iterator<PageLruCache.PageNode> iterator = this.pages.iterator();
+		while (iterator.hasNext()) {
+			PageLruCache.PageNode entry = iterator.next();
+			Page dirtyPage = entry.val;
 			if (dirtyPage != null) {
-				DbFile table = Database.getCatalog().getDatabaseFile(entry.getKey().getTableId());
+				DbFile table = Database.getCatalog().getDatabaseFile(entry.key.getTableId());
 				table.writePage(dirtyPage);
 				dirtyPage.markDirty(false, null);
 			}
@@ -248,25 +249,6 @@ public class BufferPool {
 	private synchronized void evictPage() throws DbException {
 		// some code goes here
 		// not necessary for lab1
-		// 用了LinkedHashMap 所以这里这个方法不用实现了
+		// 用了LRUMap 所以这里这个方法不用实现了
 	}
-
-	/**
-	 * 重写LinkedHashMap 实现LRU
-	 */
-	private class LRULinkedHashMap<K, V> extends LinkedHashMap<K, V> {
-
-		private int capacity;
-
-		LRULinkedHashMap(int capacity) {
-			super(capacity, 0.75f, true);
-			this.capacity = capacity;
-		}
-
-		@Override
-		protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
-			return this.size() > capacity;
-		}
-	}
-
 }

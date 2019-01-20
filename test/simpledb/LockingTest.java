@@ -57,7 +57,11 @@ public class LockingTest extends TestUtil.CreateHeapFile {
 		bp.getPage(tid, p0, Permissions.READ_WRITE).markDirty(true, tid);
 		bp.getPage(tid, p1, Permissions.READ_WRITE).markDirty(true, tid);
 		bp.getPage(tid, p2, Permissions.READ_WRITE).markDirty(true, tid);
+
+		System.out.println("start flush");
 		bp.flushAllPages();
+
+		System.out.println("flush");
 		bp = Database.resetBufferPool(BufferPool.DEFAULT_PAGES);
 		// 这里已经有一个事务加了X锁 没有释放 所以我加了这一行complete事务
 		Database.getBufferPool().transactionComplete(tid);
@@ -207,6 +211,5 @@ public class LockingTest extends TestUtil.CreateHeapFile {
 		bp.releasePage(tid2, p1);
 		bp.getPage(tid1, p1, Permissions.READ_WRITE);
 	}
-
 }
 

@@ -380,7 +380,7 @@ public class LogicalPlan {
 		HashMap<String, Double> filterSelectivities = new HashMap<>();
 		HashMap<String, TableStats> statsMap = new HashMap<>();
 
-		// 1. SeqScan Node
+		// 1. SeqScan PageNode
 		Iterator<LogicalScanNode> tableIt = tables.iterator();
 		while (tableIt.hasNext()) {
 			LogicalScanNode table = tableIt.next();
@@ -397,7 +397,7 @@ public class LogicalPlan {
 			filterSelectivities.put(table.alias, 1.0);
 		}
 
-		// 2. Filter Node
+		// 2. Filter PageNode
 		Iterator<LogicalFilterNode> filterIt = filters.iterator();
 		while (filterIt.hasNext()) {
 			LogicalFilterNode lf = filterIt.next();
