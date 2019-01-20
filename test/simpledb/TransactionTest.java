@@ -48,13 +48,13 @@ public class TransactionTest extends TestUtil.CreateHeapFile {
 		this.tid1 = new TransactionId();
 		this.tid2 = new TransactionId();
 
-		// forget about locks associated to tid, so they don't conflict with
-		// test cases
+		// forget about locks associated to tid, so they don't conflict with test cases
 		bp.getPage(tid, p0, Permissions.READ_WRITE).markDirty(true, tid);
 		bp.getPage(tid, p1, Permissions.READ_WRITE).markDirty(true, tid);
 		bp.getPage(tid, p2, Permissions.READ_WRITE).markDirty(true, tid);
 		bp.flushAllPages();
 		bp = Database.resetBufferPool(BufferPool.DEFAULT_PAGES);
+		Database.getBufferPool().transactionComplete(tid);
 	}
 
 	/**
@@ -94,7 +94,7 @@ public class TransactionTest extends TestUtil.CreateHeapFile {
 
 		boolean found = false;
 		while (it.hasNext()) {
-			Tuple tup = (Tuple) it.next();
+			Tuple tup = it.next();
 			IntField f0 = (IntField) tup.getField(0);
 			IntField f1 = (IntField) tup.getField(1);
 

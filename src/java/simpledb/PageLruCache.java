@@ -28,13 +28,13 @@ public class PageLruCache {
 		}
 		PageNode node = dataMap.get(key);
 		if (node != null) {
-			node.val = value;
+			node.page = value;
 			moveToHead(node);
 		} else {
 			if (dataMap.size() >= capacity) {
 				PageNode n = nextEvictNode();
 				if (n != null) {
-					this.remove(n.key);
+					this.remove(n.pageId);
 				}
 			}
 			node = new PageNode(key, value);
@@ -47,7 +47,7 @@ public class PageLruCache {
 		PageNode node = dataMap.get(key);
 		if (node != null) {
 			moveToHead(node);
-			return node.val;
+			return node.page;
 		}
 		return null;
 	}
@@ -59,7 +59,7 @@ public class PageLruCache {
 			node.before.after = node.after;
 			node.before = null;
 			node.after = null;
-			return node.val;
+			return node.page;
 		}
 		return null;
 	}
@@ -81,7 +81,7 @@ public class PageLruCache {
 		PageNode s = tail;
 		while (s != head) {
 			s = s.before;
-			if (s.val.isDirty() == null) {
+			if (s.page.isDirty() == null) {
 				return s;
 			}
 		}
@@ -107,12 +107,12 @@ public class PageLruCache {
 	class PageNode {
 		PageNode after;
 		PageNode before;
-		PageId key;
-		Page val;
+		PageId pageId;
+		Page page;
 
-		PageNode(PageId key, Page val) {
-			this.val = val;
-			this.key = key;
+		PageNode(PageId pageId, Page page) {
+			this.page = page;
+			this.pageId = pageId;
 		}
 	}
 
@@ -126,7 +126,7 @@ public class PageLruCache {
 
 		@Override
 		public boolean hasNext() {
-			return this.start != null && this.start != tail && this.start.after != tail;
+			return this.start != null && this.start != tail;
 		}
 
 		@Override

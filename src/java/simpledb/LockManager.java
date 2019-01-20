@@ -1,5 +1,6 @@
 package simpledb;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -106,15 +107,32 @@ public class LockManager {
 	/**
 	 * 目前的设计需要遍历这个lockState的map 所以在方法级别加上synchronized
 	 */
-	public synchronized boolean completeTransaction(TransactionId tid) {
+	public synchronized List<PageId> completeTransaction(TransactionId tid) {
+		List<PageId> resList = new ArrayList<>();
 		for (Map.Entry<PageId, List<LockNode>> e : this.lockState.entrySet()) {
 			for (int i = e.getValue().size() - 1; i >= 0; i--) {
 				if (e.getValue().get(i).belongTo(tid)) {
+					resList.add(e.getValue().get(i).pid);
 					e.getValue().remove(i);
 				}
 			}
 		}
-		return true;
+		return resList;
+	}
+
+	/**
+	 * 获取该事物涉及锁的所有page
+	 */
+	public synchronized List<PageId> relatedPages(TransactionId tid) {
+		List<PageId> resList = new ArrayList<>();
+		for (Map.Entry<PageId, List<LockNode>> e : this.lockState.entrySet()) {
+			for (LockNode n : e.getValue()) {
+				if (n.belongTo(tid)) {
+					resList.add(n.pid);
+				}
+			}
+		}
+		return resList;
 	}
 
 	class LockNode {

@@ -108,7 +108,7 @@ public class BufferPool {
 	public void transactionComplete(TransactionId tid) throws IOException {
 		// some code goes here
 		// not necessary for lab1|lab2
-		Database.getLockManager().completeTransaction(tid);
+		this.transactionComplete(tid, true);
 	}
 
 	/**
@@ -131,6 +131,20 @@ public class BufferPool {
 			throws IOException {
 		// some code goes here
 		// not necessary for lab1|lab2
+
+		if (commit) {
+			flushPages(tid);
+		} else {
+			Iterator<PageLruCache.PageNode> iterator = this.pages.iterator();
+			while (iterator.hasNext()) {
+				PageLruCache.PageNode entry = iterator.next();
+				if (tid.equals(entry.page.isDirty())) {
+					discardPage(entry.pageId);
+				}
+			}
+		}
+
+		Database.getLockManager().completeTransaction(tid);
 	}
 
 	/**
@@ -194,11 +208,8 @@ public class BufferPool {
 		Iterator<PageLruCache.PageNode> iterator = this.pages.iterator();
 		while (iterator.hasNext()) {
 			PageLruCache.PageNode entry = iterator.next();
-			Page dirtyPage = entry.val;
-			if (dirtyPage != null) {
-				DbFile table = Database.getCatalog().getDatabaseFile(entry.key.getTableId());
-				table.writePage(dirtyPage);
-				dirtyPage.markDirty(false, null);
+			if (entry.page != null) {
+				this.flushPage(entry.pageId);
 			}
 		}
 	}
@@ -228,6 +239,14 @@ public class BufferPool {
 		// not necessary for lab1
 		Page dirtyPage = this.pages.get(pid);
 		if (dirtyPage != null) {
+
+			Iterator<Tuple> tuples = ((HeapPage)dirtyPage).iterator();
+			while (tuples.hasNext()) {
+				Tuple t = tuples.next();
+				Debug.log(2, "[flushPage] dirtyPageTuples=%s", t.toString());
+			}
+
+
 			DbFile table = Database.getCatalog().getDatabaseFile(pid.getTableId());
 			table.writePage(dirtyPage);
 			dirtyPage.markDirty(false, null);
@@ -240,6 +259,21 @@ public class BufferPool {
 	public synchronized void flushPages(TransactionId tid) throws IOException {
 		// some code goes here
 		// not necessary for lab1|lab2
+		Iterator<PageLruCache.PageNode> iterator = this.pages.iterator();
+		Debug.log(2, "[flushPages] hasNext="+ iterator.hasNext());
+
+		while (iterator.hasNext()) {
+			PageLruCache.PageNode entry = iterator.next();
+			Debug.log(2, "[flushPages] loop page cache pageNo=%d",entry.pageId.getPageNumber());
+
+			if (tid.equals(entry.page.isDirty())) {
+				Debug.log(2, "[flushPages] Dirty page found! pageNo=%d", entry.pageId.getPageNumber());
+				flushPage(entry.pageId);
+
+				// set before image
+				entry.page.setBeforeImage();
+			}
+		}
 	}
 
 	/**
