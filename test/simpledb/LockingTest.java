@@ -4,6 +4,8 @@ import junit.framework.JUnit4TestAdapter;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.xml.crypto.Data;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -28,6 +30,7 @@ public class LockingTest extends TestUtil.CreateHeapFile {
 	 * Set up initial resources for each unit test.
 	 */
 	@Before
+	@SuppressWarnings("all")
 	public void setUp() throws Exception {
 		super.setUp();
 
@@ -50,13 +53,14 @@ public class LockingTest extends TestUtil.CreateHeapFile {
 		this.tid1 = new TransactionId();
 		this.tid2 = new TransactionId();
 
-		// forget about locks associated to tid, so they don't conflict with
-		// test cases
+		// forget about locks associated to tid, so they don't conflict with test cases
 		bp.getPage(tid, p0, Permissions.READ_WRITE).markDirty(true, tid);
 		bp.getPage(tid, p1, Permissions.READ_WRITE).markDirty(true, tid);
 		bp.getPage(tid, p2, Permissions.READ_WRITE).markDirty(true, tid);
 		bp.flushAllPages();
 		bp = Database.resetBufferPool(BufferPool.DEFAULT_PAGES);
+		// 这里已经有一个事务加了X锁 没有释放 所以我加了这一行complete事务
+		Database.getBufferPool().transactionComplete(tid);
 	}
 
 	/**

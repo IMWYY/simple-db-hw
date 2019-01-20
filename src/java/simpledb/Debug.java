@@ -12,24 +12,25 @@ package simpledb;
  */
 
 public class Debug {
-	private static final int DEBUG_LEVEL;
-	private static final int DEFAULT_LEVEL = -1; // <= -1 means enable debug here
 
-	static {
-		String debug = System.getProperty("simpledb.Debug");
-		if (debug == null) {
-			// No system property = disabled
-			DEBUG_LEVEL = -1;
-		} else if (debug.length() == 0) {
-			// Empty property = level 0
-			DEBUG_LEVEL = 0;
-		} else {
-			DEBUG_LEVEL = Integer.parseInt(debug);
-		}
-	}
+	private static final int DEBUG_LEVEL = 1;
+	private static final int DEFAULT_LEVEL = 1; // <= 1 means enable debug here
+
+//	static {
+//		String debug = System.getProperty("simpledb.Debug");
+//		if (debug == null) {
+//			// No system property = disabled
+//			DEBUG_LEVEL = -1;
+//		} else if (debug.length() == 0) {
+//			// Empty property = level 0
+//			DEBUG_LEVEL = 0;
+//		} else {
+//			DEBUG_LEVEL = Integer.parseInt(debug);
+//		}
+//	}
 
 	/**
-	 * Log message if the log level >= level. Uses printf.
+	 * Log message if the log DEBUG_LEVEL >= level. Uses printf.
 	 */
 	public static void log(int level, String message, Object... args) {
 		if (isEnabled(level)) {

@@ -19,6 +19,9 @@ public class LockManager {
 	}
 
 	public boolean acquireLock(TransactionId tid, PageId pid, Permissions permissions) {
+		Debug.log("[LockManager#acquireLock] start acquire tid=%d, tableId=%d, pageNo=%d, perm=%s",
+				tid.getId(), pid.getTableId(), pid.getPageNumber(), permissions.toString());
+
 		this.synchronizeControl.putIfAbsent(pid, new Object());
 		this.lockState.putIfAbsent(pid, new LinkedList<>());
 
@@ -30,24 +33,28 @@ public class LockManager {
 				}
 
 				// 加S锁 如果没有X锁就可以加S锁
+				// 注意这里如果是同一个事务之前有X锁然后现在变成S锁是允许的 需要特殊处理
 				if (permissions == Permissions.READ_ONLY) {
 					boolean hasXLock = false;
 					for (LockNode n : lockState.get(pid)) {
 						if (n.isXLock()) {
-							hasXLock = true;
+							if (!n.belongTo(tid)) {
+								hasXLock = true;
+								break;
+							}
 						}
 					}
 					if (!hasXLock) {
 						lockState.get(pid).add(new LockNode(tid, permissions, pid));
 						return true;
 					}
-					// 加X锁 如果有该事务的S锁可以直接升级
-					// todo 不能直接升级 需要查看有没有其他S锁
+					// 加X锁 如果有其他事务同时用到这个page则不能升级
 				} else {
 					boolean canUpdateLock = true;
 					for (LockNode n : lockState.get(pid)) {
 						if (!n.belongTo(tid)) {
 							canUpdateLock = false;
+							break;
 						}
 					}
 					if (canUpdateLock) {
@@ -64,8 +71,8 @@ public class LockManager {
 					e.printStackTrace();
 				}
 
-				Debug.log("[LockManager#acquireLock] tid=" + tid.toString() + ", pid=" + pid + ", permissions="
-						+ permissions);
+				Debug.log(1, "[LockManager#acquireLock] tid=%d, tableId=%d, pageNo=%d, perm=%s",
+						tid.getId(), pid.getTableId(), pid.getPageNumber(), permissions);
 			}
 		}
 	}

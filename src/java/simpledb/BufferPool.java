@@ -1,6 +1,5 @@
 package simpledb;
 
-import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -82,6 +81,8 @@ public class BufferPool {
 		}
 
 		Database.getLockManager().acquireLock(tid, pid, perm);
+		Debug.log(1, "[BufferPool#getPage] acquire success tid=%d, tableId=%d, pageNo=%d, perm=%s",
+				tid.getId(), pid.getTableId(), pid.getPageNumber(), perm.toString());
 		return pages.get(pid);
 	}
 
@@ -108,6 +109,7 @@ public class BufferPool {
 	public void transactionComplete(TransactionId tid) throws IOException {
 		// some code goes here
 		// not necessary for lab1|lab2
+		Database.getLockManager().completeTransaction(tid);
 	}
 
 	/**
@@ -191,7 +193,12 @@ public class BufferPool {
 		// some code goes here
 		// not necessary for lab1
 		for (Map.Entry<PageId, Page> entry : this.pages.entrySet()) {
-			flushPage(entry.getKey());
+			Page dirtyPage = entry.getValue();
+			if (dirtyPage != null) {
+				DbFile table = Database.getCatalog().getDatabaseFile(entry.getKey().getTableId());
+				table.writePage(dirtyPage);
+				dirtyPage.markDirty(false, null);
+			}
 		}
 	}
 
