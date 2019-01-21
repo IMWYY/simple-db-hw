@@ -1,9 +1,11 @@
 package simpledb;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -11,31 +13,48 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class LockManager {
 
+	// 记录每个page的锁状态
 	private ConcurrentHashMap<PageId, List<LockNode>> lockState;
 
+	// 用于实现page级别的锁同步
 	private ConcurrentHashMap<PageId, Object> synchronizeControl;
 
-	private ConcurrentHashMap<TransactionId, List<TransactionId>> dependencyTid;
+	// 当前有依赖的tid集合 用于死锁检测
+	private ConcurrentHashMap<TransactionId, Set<TransactionId>> dependencyOnTids;
+
+	// 当前正在等待获取锁的tid集合
+	private Set<TransactionId> waitingTransactions;
 
 	public LockManager() {
 		this.lockState = new ConcurrentHashMap<>();
 		this.synchronizeControl = new ConcurrentHashMap<>();
-		this.dependencyTid = new ConcurrentHashMap<>();
+		this.dependencyOnTids = new ConcurrentHashMap<>();
+		this.waitingTransactions = new HashSet<>();
 	}
 
-	public boolean acquireLock(TransactionId tid, PageId pid, Permissions permissions) {
+	public synchronized boolean acquireLock(TransactionId tid, PageId pid, Permissions permissions) {
 		Debug.log("[LockManager#acquireLock] start acquire tid=%d, tableId=%d, pageNo=%d, perm=%s",
 				tid.getId(), pid.getTableId(), pid.getPageNumber(), permissions.toString());
 
 		this.synchronizeControl.putIfAbsent(pid, new Object());
 		this.lockState.putIfAbsent(pid, new LinkedList<>());
 
+		// 这里添加一个waitingTids 是为解决以下这种场景：
+		// t1 acquires p0.read; t2 acquires p0.read;
+		// t1 attempts to upgrade to p0.write; t2 attempts to upgrade to p0.write
+		// 因为获取的是同一个page的锁，所以当t1正在while循环获取的时候，是没办法感知t2正被拦在synchronized外面等待获取同一个page的锁
+		// 所以记录一个waiting list.
+		this.waitingTransactions.add(tid);
+
 		int loopCount = 0;
 
 		synchronized (this.synchronizeControl.get(pid)) {
+			this.waitingTransactions.remove(tid);
+
 			while (true) {
 				if (lockState.get(pid).size() == 0) {
 					lockState.get(pid).add(new LockNode(tid, permissions, pid));
+					this.dependencyOnTids.remove(tid);
 					return true;
 				}
 
@@ -44,32 +63,44 @@ public class LockManager {
 				if (permissions == Permissions.READ_ONLY) {
 					boolean hasXLock = false;
 					for (LockNode n : lockState.get(pid)) {
-						if (n.isXLock()) {
-							if (!n.belongTo(tid)) {
-								hasXLock = true;
-//								this.dependencyTid.putIfAbsent(tid, new ArrayList<>());
-//								this.dependencyTid.get(tid).add(n.tid);
-							}
+						if (n.isXLock() && !n.belongTo(tid)) {
+							hasXLock = true;
+							this.dependencyOnTids.putIfAbsent(tid, new HashSet<>());
+							this.dependencyOnTids.get(tid).add(n.tid);
 						}
 					}
 					if (!hasXLock) {
-						lockState.get(pid).add(new LockNode(tid, permissions, pid));
+						this.lockState.get(pid).add(new LockNode(tid, permissions, pid));
+						this.dependencyOnTids.remove(tid);
 						return true;
+					} else {
+						if (hasDeadLockDependency(tid)) {
+							this.dependencyOnTids.remove(tid);
+							return false;
+						}
 					}
+
 					// 加X锁 如果有其他事务同时用到这个page则不能升级
 				} else {
 					boolean canUpdateLock = true;
 					for (LockNode n : lockState.get(pid)) {
 						if (!n.belongTo(tid)) {
 							canUpdateLock = false;
-							break;
+							this.dependencyOnTids.putIfAbsent(tid, new HashSet<>());
+							this.dependencyOnTids.get(tid).add(n.tid);
 						}
 					}
 					if (canUpdateLock) {
 						for (LockNode n : lockState.get(pid)) {
 							n.upgradeToXLock();
 						}
+						this.dependencyOnTids.remove(tid);
 						return true;
+					} else {
+						if (hasDeadLockDependency(tid)) {
+							this.dependencyOnTids.remove(tid);
+							return false;
+						}
 					}
 				}
 
@@ -83,12 +114,97 @@ public class LockManager {
 						tid.getId(), pid.getTableId(), pid.getPageNumber(), permissions);
 
 				// timeout deadlock detection
-				if (++loopCount > 5) {
+				if (++loopCount > 10) {
 					return false;
 				}
 			}
 		}
 	}
+
+	/**
+	 * 有死锁的条件是：有事务循环依赖（包括正在等待获取锁的事务）
+	 */
+	private boolean hasDeadLockDependency(TransactionId tid) {
+		boolean hasDeadLock = false;
+		for (TransactionId t : this.dependencyOnTids.get(tid)) {
+			if (this.dependencyOnTids.getOrDefault(t, new HashSet<>()).contains(tid)
+					|| this.waitingTransactions.contains(t)) {
+				hasDeadLock = true;
+				break;
+			}
+		}
+		return hasDeadLock;
+	}
+
+//	/**
+//	 * 利用timeout来实现的死锁检测
+//	 */
+//	public boolean acquireLock(TransactionId tid, PageId pid, Permissions permissions) {
+//		Debug.log("[LockManager#acquireLock] start acquire tid=%d, tableId=%d, pageNo=%d, perm=%s",
+//				tid.getId(), pid.getTableId(), pid.getPageNumber(), permissions.toString());
+//
+//		this.synchronizeControl.putIfAbsent(pid, new Object());
+//		this.lockState.putIfAbsent(pid, new LinkedList<>());
+//
+//		int loopCount = 0;
+//
+//		synchronized (this.synchronizeControl.get(pid)) {
+//			while (true) {
+//				if (lockState.get(pid).size() == 0) {
+//					lockState.get(pid).add(new LockNode(tid, permissions, pid));
+//					return true;
+//				}
+//
+//				// 加S锁 如果没有X锁就可以加S锁
+//				// 注意这里如果是同一个事务之前有X锁然后现在变成S锁是允许的 需要特殊处理
+//				if (permissions == Permissions.READ_ONLY) {
+//					boolean hasXLock = false;
+//					for (LockNode n : lockState.get(pid)) {
+//						if (n.isXLock()) {
+//							if (!n.belongTo(tid)) {
+//								hasXLock = true;
+//                              break;
+//							}
+//						}
+//					}
+//					if (!hasXLock) {
+//						lockState.get(pid).add(new LockNode(tid, permissions, pid));
+//						return true;
+//					}
+//					// 加X锁 如果有其他事务同时用到这个page则不能升级
+//				} else {
+//					boolean canUpdateLock = true;
+//					for (LockNode n : lockState.get(pid)) {
+//						if (!n.belongTo(tid)) {
+//							canUpdateLock = false;
+//							break;
+//						}
+//					}
+//					if (canUpdateLock) {
+//						for (LockNode n : lockState.get(pid)) {
+//							n.upgradeToXLock();
+//						}
+//						return true;
+//					}
+//				}
+//
+//				try {
+//					Thread.sleep(100);
+//				} catch (InterruptedException e) {
+//					e.printStackTrace();
+//				}
+//
+//				Debug.log(Debug.LEVEL_DEBUG, "[LockManager#acquireLock] tid=%d, tableId=%d, pageNo=%d, perm=%s",
+//						tid.getId(), pid.getTableId(), pid.getPageNumber(), permissions);
+//
+//				// timeout deadlock detection
+//				if (++loopCount > 5) {
+//					return false;
+//				}
+//			}
+//		}
+//	}
+
 
 	public boolean holdsLock(TransactionId tid, PageId pid) {
 		this.synchronizeControl.putIfAbsent(pid, new Object());
@@ -134,6 +250,7 @@ public class LockManager {
 
 	/**
 	 * 释放用于pageID并发控制的object 防止synchronizeControl一直增长
+	 *
 	 * @param pid
 	 */
 	public void releasePageIdLock(PageId pid) {
