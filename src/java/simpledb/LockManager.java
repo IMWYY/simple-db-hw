@@ -26,6 +26,8 @@ public class LockManager {
 		this.synchronizeControl.putIfAbsent(pid, new Object());
 		this.lockState.putIfAbsent(pid, new LinkedList<>());
 
+		int loopCount = 0;
+
 		synchronized (this.synchronizeControl.get(pid)) {
 			while (true) {
 				if (lockState.get(pid).size() == 0) {
@@ -67,13 +69,17 @@ public class LockManager {
 				}
 
 				try {
-					Thread.sleep(200);
+					Thread.sleep(100);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
 
 				Debug.log(Debug.LEVEL_DEBUG, "[LockManager#acquireLock] tid=%d, tableId=%d, pageNo=%d, perm=%s",
 						tid.getId(), pid.getTableId(), pid.getPageNumber(), permissions);
+
+				if (++loopCount > 5) {
+					return false;
+				}
 			}
 		}
 	}
@@ -118,6 +124,11 @@ public class LockManager {
 			}
 		}
 		return resList;
+	}
+
+	public synchronized boolean hasDeadLock(TransactionId tid, PageId pid, Permissions perm) {
+
+		return true;
 	}
 
 	/**

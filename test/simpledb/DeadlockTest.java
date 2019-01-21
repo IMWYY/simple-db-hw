@@ -10,6 +10,7 @@ import java.util.Random;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
+@SuppressWarnings("all")
 public class DeadlockTest extends TestUtil.CreateHeapFile {
 	private static final int POLL_INTERVAL = 100;
 	private static final int WAIT_INTERVAL = 200;
@@ -53,22 +54,20 @@ public class DeadlockTest extends TestUtil.CreateHeapFile {
 		this.tid2 = new TransactionId();
 		this.rand = new Random();
 
-		// forget about locks associated to tid, so they don't conflict with
-		// test cases
+		// forget about locks associated to tid, so they don't conflict with test cases
 		bp.getPage(tid, p0, Permissions.READ_WRITE).markDirty(true, tid);
 		bp.getPage(tid, p1, Permissions.READ_WRITE).markDirty(true, tid);
 		bp.getPage(tid, p2, Permissions.READ_WRITE).markDirty(true, tid);
 		bp.flushAllPages();
 		bp = Database.resetBufferPool(BufferPool.DEFAULT_PAGES);
+		bp.transactionComplete(tid);
 	}
 
 	/**
 	 * Helper method to clean up the syntax of starting a LockGrabber thread.
 	 * The parameters pass through to the LockGrabber constructor.
 	 */
-	public TestUtil.LockGrabber startGrabber(TransactionId tid, PageId pid,
-			Permissions perm) {
-
+	public TestUtil.LockGrabber startGrabber(TransactionId tid, PageId pid, Permissions perm) {
 		LockGrabber lg = new LockGrabber(tid, pid, perm);
 		lg.start();
 		return lg;

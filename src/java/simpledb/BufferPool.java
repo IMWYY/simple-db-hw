@@ -79,7 +79,10 @@ public class BufferPool {
 			this.pages.put(pid, p);
 		}
 
-		Database.getLockManager().acquireLock(tid, pid, perm);
+		if (!Database.getLockManager().acquireLock(tid, pid, perm)) {
+			throw new TransactionAbortedException();
+		}
+
 		Debug.log(Debug.LEVEL_DEBUG, "[BufferPool#getPage] acquire success tid=%d, tableId=%d, pageNo=%d, perm=%s",
 				tid.getId(), pid.getTableId(), pid.getPageNumber(), perm.toString());
 		return pages.get(pid);

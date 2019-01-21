@@ -43,8 +43,7 @@ public class TransactionTest extends SimpleDbTestBase {
 		return new junit.framework.JUnit4TestAdapter(TransactionTest.class);
 	}
 
-	private void validateTransactions(int threads)
-			throws DbException, TransactionAbortedException, IOException {
+	private void validateTransactions(int threads) throws DbException, TransactionAbortedException, IOException {
 		// Create a table with a single integer value = 0
 		HashMap<Integer, Integer> columnSpecification = new HashMap<>();
 		columnSpecification.put(0, 0);
@@ -74,7 +73,6 @@ public class TransactionTest extends SimpleDbTestBase {
 
 			if (tester.exception != null) {
 				// Rethrow any exception from a child thread
-				assert tester.exception != null;
 				throw new RuntimeException("Child thread threw an exception.", tester.exception);
 			}
 			assert tester.completed;
@@ -133,7 +131,7 @@ public class TransactionTest extends SimpleDbTestBase {
 		try {
 			EvictionTest.findMagicTuple(f, t);
 			fail("Expected scan to run out of available buffer pages");
-		} catch (DbException e) {
+		} catch (DbException ignored) {
 		}
 		t.commit();
 	}

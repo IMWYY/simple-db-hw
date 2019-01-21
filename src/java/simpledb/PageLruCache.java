@@ -79,7 +79,7 @@ public class PageLruCache {
 	 */
 	private PageNode nextEvictNode() throws DbException {
 		PageNode s = tail;
-		while (s != head) {
+		while (s != head && s.before != head) {
 			s = s.before;
 			if (s.page.isDirty() == null) {
 				return s;
