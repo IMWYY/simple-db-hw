@@ -80,7 +80,7 @@ public class BufferPool {
 		}
 
 		Database.getLockManager().acquireLock(tid, pid, perm);
-		Debug.log(1, "[BufferPool#getPage] acquire success tid=%d, tableId=%d, pageNo=%d, perm=%s",
+		Debug.log(Debug.LEVEL_DEBUG, "[BufferPool#getPage] acquire success tid=%d, tableId=%d, pageNo=%d, perm=%s",
 				tid.getId(), pid.getTableId(), pid.getPageNumber(), perm.toString());
 		return pages.get(pid);
 	}
@@ -243,7 +243,7 @@ public class BufferPool {
 			Iterator<Tuple> tuples = ((HeapPage)dirtyPage).iterator();
 			while (tuples.hasNext()) {
 				Tuple t = tuples.next();
-				Debug.log(2, "[flushPage] dirtyPageTuples=%s", t.toString());
+				Debug.log(Debug.LEVEL_DEBUG, "[flushPage] dirtyPageTuples=%s", t.toString());
 			}
 
 
@@ -260,14 +260,14 @@ public class BufferPool {
 		// some code goes here
 		// not necessary for lab1|lab2
 		Iterator<PageLruCache.PageNode> iterator = this.pages.iterator();
-		Debug.log(2, "[flushPages] hasNext="+ iterator.hasNext());
+		Debug.log(Debug.LEVEL_DEBUG, "[flushPages] hasNext="+ iterator.hasNext());
 
 		while (iterator.hasNext()) {
 			PageLruCache.PageNode entry = iterator.next();
-			Debug.log(2, "[flushPages] loop page cache pageNo=%d",entry.pageId.getPageNumber());
+			Debug.log(Debug.LEVEL_DEBUG, "[flushPages] loop page cache pageNo=%d",entry.pageId.getPageNumber());
 
 			if (tid.equals(entry.page.isDirty())) {
-				Debug.log(2, "[flushPages] Dirty page found! pageNo=%d", entry.pageId.getPageNumber());
+				Debug.log(Debug.LEVEL_DEBUG, "[flushPages] Dirty page found! pageNo=%d", entry.pageId.getPageNumber());
 				flushPage(entry.pageId);
 
 				// set before image

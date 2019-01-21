@@ -46,7 +46,7 @@ public class TransactionTest extends SimpleDbTestBase {
 	private void validateTransactions(int threads)
 			throws DbException, TransactionAbortedException, IOException {
 		// Create a table with a single integer value = 0
-		HashMap<Integer, Integer> columnSpecification = new HashMap<Integer, Integer>();
+		HashMap<Integer, Integer> columnSpecification = new HashMap<>();
 		columnSpecification.put(0, 0);
 		DbFile table = SystemTestUtil.createRandomHeapFile(1, 1, columnSpecification, null);
 
@@ -217,9 +217,7 @@ public class TransactionTest extends SimpleDbTestBase {
 
 			try {
 				latch.notParticipating();
-			} catch (InterruptedException e) {
-				throw new RuntimeException(e);
-			} catch (BrokenBarrierException e) {
+			} catch (InterruptedException | BrokenBarrierException e) {
 				throw new RuntimeException(e);
 			}
 			completed = true;

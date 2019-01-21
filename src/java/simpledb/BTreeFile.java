@@ -101,7 +101,7 @@ public class BTreeFile implements DbFile {
 					throw new IllegalArgumentException("Unable to read "
 							+ BTreeRootPtrPage.getPageSize() + " bytes from BTreeFile");
 				}
-				Debug.log(1, "BTreeFile.readPage: read page %d", id.getPageNumber());
+				Debug.log(Debug.LEVEL_DEBUG, "BTreeFile.readPage: read page %d", id.getPageNumber());
 				BTreeRootPtrPage p = new BTreeRootPtrPage(id, pageBuf);
 				return p;
 			} else {
@@ -119,7 +119,7 @@ public class BTreeFile implements DbFile {
 					throw new IllegalArgumentException("Unable to read "
 							+ BufferPool.getPageSize() + " bytes from BTreeFile");
 				}
-				Debug.log(1, "BTreeFile.readPage: read page %d", id.getPageNumber());
+				Debug.log(Debug.LEVEL_DEBUG, "BTreeFile.readPage: read page %d", id.getPageNumber());
 				if (id.pgcateg() == BTreePageId.INTERNAL) {
 					BTreeInternalPage p = new BTreeInternalPage(id, pageBuf, keyField);
 					return p;

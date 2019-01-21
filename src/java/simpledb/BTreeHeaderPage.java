@@ -282,7 +282,7 @@ public class BTreeHeaderPage implements Page {
 		int headerbit = i % 8;
 		int headerbyte = (i - headerbit) / 8;
 
-		Debug.log(1, "BTreeHeaderPage.setSlot: setting slot %d to %b", i, value);
+		Debug.log(Debug.LEVEL_DEBUG, "BTreeHeaderPage.setSlot: setting slot %d to %b", i, value);
 		if (value)
 			header[headerbyte] |= 1 << headerbit;
 		else

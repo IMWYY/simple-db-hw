@@ -13,28 +13,24 @@ package simpledb;
 
 public class Debug {
 
-	private static final int DEBUG_LEVEL = 2;
-	private static final int DEFAULT_LEVEL = 1; // <= 1 means enable debug here
+	/**
+	 * 0: ERROR
+	 * 1: INFO
+	 * 2: DEBUG
+	 */
+	public static final int LEVEL_ERROR = 0;
+	public static final int LEVEL_INFO = 1;
+	public static final int LEVEL_DEBUG = 2;
 
-//	static {
-//		String debug = System.getProperty("simpledb.Debug");
-//		if (debug == null) {
-//			// No system property = disabled
-//			DEBUG_LEVEL = -1;
-//		} else if (debug.length() == 0) {
-//			// Empty property = level 0
-//			DEBUG_LEVEL = 0;
-//		} else {
-//			DEBUG_LEVEL = Integer.parseInt(debug);
-//		}
-//	}
+	private static final int CUR_LOG_LEVEL = 2;
+	private static final boolean LOG_SWITCH_ON = true;
 
 	/**
 	 * Log message if the log DEBUG_LEVEL >= level. Uses printf.
 	 */
 	public static void log(int level, String message, Object... args) {
 		if (isEnabled(level)) {
-			System.out.printf(message, args);
+			System.out.printf(getLogLevelStr(level) + message, args);
 			System.out.println();
 		}
 	}
@@ -43,20 +39,34 @@ public class Debug {
 	 * @return true if level is being logged.
 	 */
 	public static boolean isEnabled(int level) {
-		return level <= DEBUG_LEVEL;
+		return level <= CUR_LOG_LEVEL;
 	}
 
 	/**
 	 * @return true if the default level is being logged.
 	 */
 	public static boolean isEnabled() {
-		return isEnabled(DEFAULT_LEVEL);
+		return LOG_SWITCH_ON;
 	}
 
 	/**
 	 * Logs message at the default log level.
 	 */
 	public static void log(String message, Object... args) {
-		log(DEFAULT_LEVEL, message, args);
+		log(LEVEL_INFO, message, args);
 	}
+
+	private static String getLogLevelStr(int level) {
+		switch (level) {
+		case LEVEL_ERROR:
+			return "[ERROR] ";
+		case LEVEL_INFO:
+			return "[INFO]  ";
+		case LEVEL_DEBUG:
+			return "[DEBUG] ";
+		default:
+			return "";
+		}
+	}
+
 }

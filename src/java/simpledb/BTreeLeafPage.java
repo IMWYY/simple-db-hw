@@ -360,7 +360,7 @@ public class BTreeLeafPage extends BTreePage {
 
 		// insert new record into the correct spot in sorted order
 		markSlotUsed(goodSlot, true);
-		Debug.log(1, "BTreeLeafPage.insertTuple: new tuple, tableId = %d pageId = %d slotId = %d", pid.getTableId(),
+		Debug.log(Debug.LEVEL_DEBUG, "BTreeLeafPage.insertTuple: new tuple, tableId = %d pageId = %d slotId = %d", pid.getTableId(),
 				pid.getPageNumber(), goodSlot);
 		RecordId rid = new RecordId(pid, goodSlot);
 		t.setRecordId(rid);
@@ -479,7 +479,7 @@ public class BTreeLeafPage extends BTreePage {
 		int headerbit = i % 8;
 		int headerbyte = (i - headerbit) / 8;
 
-		Debug.log(1, "BTreeLeafPage.setSlot: setting slot %d to %b", i, value);
+		Debug.log(Debug.LEVEL_DEBUG, "BTreeLeafPage.setSlot: setting slot %d to %b", i, value);
 		if (value)
 			header[headerbyte] |= 1 << headerbit;
 		else
@@ -516,12 +516,12 @@ public class BTreeLeafPage extends BTreePage {
 
 		try {
 			if (!isSlotUsed(i)) {
-				Debug.log(1, "BTreeLeafPage.getTuple: slot %d in %d:%d is not used", i, pid.getTableId(),
+				Debug.log(Debug.LEVEL_DEBUG, "BTreeLeafPage.getTuple: slot %d in %d:%d is not used", i, pid.getTableId(),
 						pid.getPageNumber());
 				return null;
 			}
 
-			Debug.log(1, "BTreeLeafPage.getTuple: returning tuple %d", i);
+			Debug.log(Debug.LEVEL_DEBUG, "BTreeLeafPage.getTuple: returning tuple %d", i);
 			return tuples[i];
 
 		} catch (ArrayIndexOutOfBoundsException e) {

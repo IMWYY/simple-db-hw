@@ -72,7 +72,7 @@ public class LockManager {
 					e.printStackTrace();
 				}
 
-				Debug.log(1, "[LockManager#acquireLock] tid=%d, tableId=%d, pageNo=%d, perm=%s",
+				Debug.log(Debug.LEVEL_DEBUG, "[LockManager#acquireLock] tid=%d, tableId=%d, pageNo=%d, perm=%s",
 						tid.getId(), pid.getTableId(), pid.getPageNumber(), permissions);
 			}
 		}
