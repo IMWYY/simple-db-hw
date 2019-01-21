@@ -33,6 +33,7 @@ import static org.junit.Assert.fail;
  * You do not need to pass this test until lab3.
  */
 public class TransactionTest extends SimpleDbTestBase {
+
 	// Wait up to 10 minutes for the test to complete
 	private static final int TIMEOUT_MILLIS = 10 * 60 * 1000;
 
@@ -41,6 +42,47 @@ public class TransactionTest extends SimpleDbTestBase {
 	 */
 	public static junit.framework.Test suite() {
 		return new junit.framework.JUnit4TestAdapter(TransactionTest.class);
+	}
+
+	@Test
+	public void testSingleThread() throws IOException, DbException, TransactionAbortedException {
+		validateTransactions(1);
+	}
+
+	@Test
+	public void testTwoThreads() throws IOException, DbException, TransactionAbortedException {
+		validateTransactions(2);
+	}
+
+	@Test
+	public void testFiveThreads() throws IOException, DbException, TransactionAbortedException {
+		validateTransactions(5);
+	}
+
+	@Test
+	public void testTenThreads() throws IOException, DbException, TransactionAbortedException {
+		validateTransactions(10);
+	}
+
+	@Test
+	public void testAllDirtyFails() throws IOException, DbException, TransactionAbortedException {
+		// Allocate a file with ~10 pages of data
+		HeapFile f = SystemTestUtil.createRandomHeapFile(2, 512 * 10, null, null);
+		Database.resetBufferPool(1);
+
+		// BEGIN TRANSACTION
+		Transaction t = new Transaction();
+		t.start();
+
+		// Insert a new row
+		EvictionTest.insertRow(f, t);
+		// Scanning the table must fail because it can't evict the dirty page
+		try {
+			EvictionTest.findMagicTuple(f, t);
+			fail("Expected scan to run out of available buffer pages");
+		} catch (DbException ignored) {
+		}
+		t.commit();
 	}
 
 	private void validateTransactions(int threads) throws DbException, TransactionAbortedException, IOException {
@@ -89,54 +131,8 @@ public class TransactionTest extends SimpleDbTestBase {
 		Database.getBufferPool().flushAllPages();
 	}
 
-	@Test
-	public void testSingleThread()
-			throws IOException, DbException, TransactionAbortedException {
-		validateTransactions(1);
-	}
-
-	@Test
-	public void testTwoThreads()
-			throws IOException, DbException, TransactionAbortedException {
-		validateTransactions(2);
-	}
-
-	@Test
-	public void testFiveThreads()
-			throws IOException, DbException, TransactionAbortedException {
-		validateTransactions(5);
-	}
-
-	@Test
-	public void testTenThreads()
-			throws IOException, DbException, TransactionAbortedException {
-		validateTransactions(10);
-	}
-
-	@Test
-	public void testAllDirtyFails()
-			throws IOException, DbException, TransactionAbortedException {
-		// Allocate a file with ~10 pages of data
-		HeapFile f = SystemTestUtil.createRandomHeapFile(2, 512 * 10, null, null);
-		Database.resetBufferPool(1);
-
-		// BEGIN TRANSACTION
-		Transaction t = new Transaction();
-		t.start();
-
-		// Insert a new row
-		EvictionTest.insertRow(f, t);
-
-		// Scanning the table must fail because it can't evict the dirty page
-		try {
-			EvictionTest.findMagicTuple(f, t);
-			fail("Expected scan to run out of available buffer pages");
-		} catch (DbException ignored) {
-		}
-		t.commit();
-	}
-
 	private static class XactionTester extends Thread {
+
 		private final int tableId;
 		private final ModifiableCyclicBarrier latch;
 		public Exception exception = null;
@@ -163,11 +159,9 @@ public class TransactionTest extends SimpleDbTestBase {
 						Query q1 = new Query(ss1, tr.getId());
 						q1.start();
 						Tuple tup = q1.next();
-						IntField intf = (IntField) tup.getField(0);
-						int i = intf.getValue();
+						int i = ((IntField) tup.getField(0)).getValue();
 
-						// create a Tuple so that Insert can insert this new value
-						// into the table.
+						// create a Tuple so that Insert can insert this new value into the table.
 						Tuple t = new Tuple(SystemTestUtil.SINGLE_INT_DESCRIPTOR);
 						t.setField(0, new IntField(i + 1));
 
@@ -187,7 +181,7 @@ public class TransactionTest extends SimpleDbTestBase {
 						q2.close();
 
 						// set up a Set with a tuple that is one higher than the old one.
-						HashSet<Tuple> hs = new HashSet<Tuple>();
+						HashSet<Tuple> hs = new HashSet<>();
 						hs.add(t);
 						TupleIterator ti = new TupleIterator(t.getTupleDesc(), hs);
 
@@ -201,13 +195,11 @@ public class TransactionTest extends SimpleDbTestBase {
 						tr.commit();
 						break;
 					} catch (TransactionAbortedException te) {
-						//System.out.println("thread " + tr.getId() + " killed");
 						// give someone else a chance: abort the transaction
 						tr.transactionComplete(true);
 						latch.stillParticipating();
 					}
 				}
-				//System.out.println("thread " + id + " done");
 			} catch (Exception e) {
 				// Store exception for the master thread to handle
 				exception = e;
@@ -252,10 +244,11 @@ public class TransactionTest extends SimpleDbTestBase {
 		}
 
 		private static class UpdateLatch implements Runnable {
+
 			ModifiableCyclicBarrier latch;
 			AtomicInteger nextParticipants;
 
-			public UpdateLatch(ModifiableCyclicBarrier latch, AtomicInteger nextParticipants) {
+			UpdateLatch(ModifiableCyclicBarrier latch, AtomicInteger nextParticipants) {
 				this.latch = latch;
 				this.nextParticipants = nextParticipants;
 			}

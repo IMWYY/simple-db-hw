@@ -35,10 +35,8 @@ public class SystemTestUtil {
 	/**
 	 * @param columnSpecification Mapping between column index and value.
 	 */
-	public static HeapFile createRandomHeapFile(
-			int columns, int rows, Map<Integer, Integer> columnSpecification,
-			ArrayList<ArrayList<Integer>> tuples)
-			throws IOException, DbException, TransactionAbortedException {
+	public static HeapFile createRandomHeapFile(int columns, int rows, Map<Integer, Integer> columnSpecification,
+			ArrayList<ArrayList<Integer>> tuples) throws IOException, DbException, TransactionAbortedException {
 		return createRandomHeapFile(columns, rows, MAX_RAND_VALUE, columnSpecification, tuples);
 	}
 
@@ -58,9 +56,8 @@ public class SystemTestUtil {
 		return createRandomHeapFile(columns, rows, MAX_RAND_VALUE, columnSpecification, tuples, colPrefix);
 	}
 
-	public static HeapFile createRandomHeapFile(
-			int columns, int rows, int maxValue, Map<Integer, Integer> columnSpecification,
-			ArrayList<ArrayList<Integer>> tuples, String colPrefix)
+	public static HeapFile createRandomHeapFile(int columns, int rows, int maxValue,
+			Map<Integer, Integer> columnSpecification, ArrayList<ArrayList<Integer>> tuples, String colPrefix)
 			throws IOException, DbException, TransactionAbortedException {
 		File temp = createRandomHeapFileUnopened(columns, rows, maxValue,
 				columnSpecification, tuples);
@@ -68,8 +65,7 @@ public class SystemTestUtil {
 	}
 
 	public static File createRandomHeapFileUnopened(int columns, int rows, int maxValue,
-			Map<Integer, Integer> columnSpecification,
-			ArrayList<ArrayList<Integer>> tuples) throws IOException {
+			Map<Integer, Integer> columnSpecification, ArrayList<ArrayList<Integer>> tuples) throws IOException {
 		if (tuples != null) {
 			tuples.clear();
 		} else {

@@ -249,11 +249,11 @@ public class BufferPool {
 				Debug.log(Debug.LEVEL_DEBUG, "[flushPage] dirtyPageTuples=%s", t.toString());
 			}
 
-
 			DbFile table = Database.getCatalog().getDatabaseFile(pid.getTableId());
 			table.writePage(dirtyPage);
 			dirtyPage.markDirty(false, null);
 		}
+		Database.getLockManager().releasePageIdLock(pid);
 	}
 
 	/**

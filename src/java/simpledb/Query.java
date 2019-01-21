@@ -50,10 +50,8 @@ public class Query implements Serializable {
 		this.op = pp;
 	}
 
-	public void start() throws IOException, DbException,
-			TransactionAbortedException {
+	public void start() throws IOException, DbException, TransactionAbortedException {
 		op.open();
-
 		started = true;
 	}
 

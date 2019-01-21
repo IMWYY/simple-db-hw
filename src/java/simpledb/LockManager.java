@@ -12,11 +12,15 @@ import java.util.concurrent.ConcurrentHashMap;
 public class LockManager {
 
 	private ConcurrentHashMap<PageId, List<LockNode>> lockState;
+
 	private ConcurrentHashMap<PageId, Object> synchronizeControl;
+
+	private ConcurrentHashMap<TransactionId, List<TransactionId>> dependencyTid;
 
 	public LockManager() {
 		this.lockState = new ConcurrentHashMap<>();
 		this.synchronizeControl = new ConcurrentHashMap<>();
+		this.dependencyTid = new ConcurrentHashMap<>();
 	}
 
 	public boolean acquireLock(TransactionId tid, PageId pid, Permissions permissions) {
@@ -43,7 +47,8 @@ public class LockManager {
 						if (n.isXLock()) {
 							if (!n.belongTo(tid)) {
 								hasXLock = true;
-								break;
+//								this.dependencyTid.putIfAbsent(tid, new ArrayList<>());
+//								this.dependencyTid.get(tid).add(n.tid);
 							}
 						}
 					}
@@ -77,6 +82,7 @@ public class LockManager {
 				Debug.log(Debug.LEVEL_DEBUG, "[LockManager#acquireLock] tid=%d, tableId=%d, pageNo=%d, perm=%s",
 						tid.getId(), pid.getTableId(), pid.getPageNumber(), permissions);
 
+				// timeout deadlock detection
 				if (++loopCount > 5) {
 					return false;
 				}
@@ -126,9 +132,12 @@ public class LockManager {
 		return resList;
 	}
 
-	public synchronized boolean hasDeadLock(TransactionId tid, PageId pid, Permissions perm) {
-
-		return true;
+	/**
+	 * 释放用于pageID并发控制的object 防止synchronizeControl一直增长
+	 * @param pid
+	 */
+	public void releasePageIdLock(PageId pid) {
+		this.synchronizeControl.remove(pid);
 	}
 
 	/**
