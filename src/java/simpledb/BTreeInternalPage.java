@@ -51,7 +51,7 @@ public class BTreeInternalPage extends BTreePage {
 	 */
 	public BTreeInternalPage(BTreePageId id, byte[] data, int key) throws IOException {
 		super(id, key);
-		this.numSlots = getMaxEntries() + 1;
+		this.numSlots = getMaxEntries() + 1; // +1的原因是:a node with m keys has m+1 pointers
 		DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data));
 
 		// Read the parent pointer
@@ -124,8 +124,7 @@ public class BTreeInternalPage extends BTreePage {
 		// extraBits are: one parent pointer, 1 byte for child page category, 
 		// one extra child pointer (node with m entries has m+1 pointers to children), 1 bit for extra header
 		int extraBits = 2 * INDEX_SIZE * 8 + 8 + 1;
-		int entriesPerPage = (BufferPool.getPageSize() * 8 - extraBits) / bitsPerEntryIncludingHeader; //round down
-		return entriesPerPage;
+		return (BufferPool.getPageSize() * 8 - extraBits) / bitsPerEntryIncludingHeader;
 	}
 
 	/**
@@ -136,6 +135,7 @@ public class BTreeInternalPage extends BTreePage {
 	private int getHeaderSize() {
 		int slotsPerPage = getMaxEntries() + 1;
 		int hb = (slotsPerPage / 8);
+		// 字节对齐
 		if (hb * 8 < slotsPerPage)
 			hb++;
 
@@ -171,8 +171,7 @@ public class BTreeInternalPage extends BTreePage {
 	 * Read keys from the source file.
 	 */
 	private Field readNextKey(DataInputStream dis, int slotId) throws NoSuchElementException {
-		// if associated bit is not set, read forward to the next key, and
-		// return null.
+		// if associated bit is not set, read forward to the next key, and return null.
 		if (!isSlotUsed(slotId)) {
 			for (int i = 0; i < td.getFieldType(keyField).getLen(); i++) {
 				try {
@@ -185,7 +184,7 @@ public class BTreeInternalPage extends BTreePage {
 		}
 
 		// read the key field
-		Field f = null;
+		Field f;
 		try {
 			f = td.getFieldType(keyField).parse(dis);
 		} catch (java.text.ParseException e) {
@@ -200,8 +199,7 @@ public class BTreeInternalPage extends BTreePage {
 	 * Read child pointers from the source file.
 	 */
 	private int readNextChild(DataInputStream dis, int slotId) throws NoSuchElementException {
-		// if associated bit is not set, read forward to the next child pointer, and
-		// return -1.
+		// if associated bit is not set, read forward to the next child pointer, and return -1.
 		if (!isSlotUsed(slotId)) {
 			for (int i = 0; i < INDEX_SIZE; i++) {
 				try {
@@ -214,7 +212,7 @@ public class BTreeInternalPage extends BTreePage {
 		}
 
 		// read child pointer
-		int child = -1;
+		int child;
 		try {
 			Field f = Type.INT_TYPE.parse(dis);
 			child = ((IntField) f).getValue();
@@ -259,9 +257,9 @@ public class BTreeInternalPage extends BTreePage {
 		}
 
 		// create the header of the page
-		for (int i = 0; i < header.length; i++) {
+		for (byte aHeader : header) {
 			try {
-				dos.writeByte(header[i]);
+				dos.writeByte(aHeader);
 			} catch (IOException e) {
 				// this really shouldn't happen
 				e.printStackTrace();
@@ -355,8 +353,8 @@ public class BTreeInternalPage extends BTreePage {
 		RecordId rid = e.getRecordId();
 		if (rid == null)
 			throw new DbException("tried to delete entry with null rid");
-		if ((rid.getPageId().getPageNumber() != pid.getPageNumber()) || (rid.getPageId().getTableId() != pid
-				.getTableId()))
+		if ((rid.getPageId().getPageNumber() != pid.getPageNumber())
+				|| (rid.getPageId().getTableId() != pid.getTableId()))
 			throw new DbException("tried to delete entry on invalid page or table");
 		if (!isSlotUsed(rid.getTupleNumber()))
 			throw new DbException("tried to delete null entry.");
@@ -549,7 +547,8 @@ public class BTreeInternalPage extends BTreePage {
 
 		// insert new entry into the correct spot in sorted order
 		markSlotUsed(goodSlot, true);
-		Debug.log(Debug.LEVEL_DEBUG, "BTreeLeafPage.insertEntry: new entry, tableId = %d pageId = %d slotId = %d", pid.getTableId(),
+		Debug.log(Debug.LEVEL_DEBUG, "BTreeLeafPage.insertEntry: new entry, tableId = %d pageId = %d slotId = %d",
+				pid.getTableId(),
 				pid.getPageNumber(), goodSlot);
 		keys[goodSlot] = e.getKey();
 		children[goodSlot] = e.getRightChild().getPageNumber();
@@ -643,7 +642,8 @@ public class BTreeInternalPage extends BTreePage {
 
 		try {
 			if (!isSlotUsed(i)) {
-				Debug.log(Debug.LEVEL_DEBUG, "BTreeInternalPage.getKey: slot %d in %d:%d is not used", i, pid.getTableId(),
+				Debug.log(Debug.LEVEL_DEBUG, "BTreeInternalPage.getKey: slot %d in %d:%d is not used", i,
+						pid.getTableId(),
 						pid.getPageNumber());
 				return null;
 			}
@@ -670,7 +670,8 @@ public class BTreeInternalPage extends BTreePage {
 
 		try {
 			if (!isSlotUsed(i)) {
-				Debug.log(Debug.LEVEL_DEBUG, "BTreeInternalPage.getChildId: slot %d in %d:%d is not used", i, pid.getTableId(),
+				Debug.log(Debug.LEVEL_DEBUG, "BTreeInternalPage.getChildId: slot %d in %d:%d is not used", i,
+						pid.getTableId(),
 						pid.getPageNumber());
 				return null;
 			}
@@ -688,9 +689,9 @@ public class BTreeInternalPage extends BTreePage {
  * Helper class that implements the Java Iterator for entries on a BTreeInternalPage.
  */
 class BTreeInternalPageIterator implements Iterator<BTreeEntry> {
-	int curEntry = 1;
-	BTreePageId prevChildId = null;
-	BTreeEntry nextToReturn = null;
+	private int curEntry = 1;
+	private BTreePageId prevChildId = null;
+	private BTreeEntry nextToReturn = null;
 	BTreeInternalPage p;
 
 	public BTreeInternalPageIterator(BTreeInternalPage p) {
@@ -726,7 +727,6 @@ class BTreeInternalPageIterator implements Iterator<BTreeEntry> {
 
 	public BTreeEntry next() {
 		BTreeEntry next = nextToReturn;
-
 		if (next == null) {
 			if (hasNext()) {
 				next = nextToReturn;
@@ -749,9 +749,9 @@ class BTreeInternalPageIterator implements Iterator<BTreeEntry> {
  * Helper class that implements the Java Iterator for entries on a BTreeInternalPage in reverse.
  */
 class BTreeInternalPageReverseIterator implements Iterator<BTreeEntry> {
-	int curEntry;
-	BTreePageId nextChildId = null;
-	BTreeEntry nextToReturn = null;
+	private int curEntry;
+	private BTreePageId nextChildId = null;
+	private BTreeEntry nextToReturn = null;
 	BTreeInternalPage p;
 
 	public BTreeInternalPageReverseIterator(BTreeInternalPage p) {
@@ -791,7 +791,6 @@ class BTreeInternalPageReverseIterator implements Iterator<BTreeEntry> {
 
 	public BTreeEntry next() {
 		BTreeEntry next = nextToReturn;
-
 		if (next == null) {
 			if (hasNext()) {
 				next = nextToReturn;

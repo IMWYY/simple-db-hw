@@ -12,14 +12,12 @@ public interface DbFileIterator {
 	 *
 	 * @throws DbException when there are problems opening/accessing the database.
 	 */
-	public void open()
-			throws DbException, TransactionAbortedException;
+	public void open() throws DbException, TransactionAbortedException;
 
 	/**
 	 * @return true if there are more tuples available, false if no more tuples or iterator isn't open.
 	 */
-	public boolean hasNext()
-			throws DbException, TransactionAbortedException;
+	public boolean hasNext() throws DbException, TransactionAbortedException;
 
 	/**
 	 * Gets the next tuple from the operator (typically implementing by reading
@@ -28,8 +26,7 @@ public interface DbFileIterator {
 	 * @return The next tuple in the iterator.
 	 * @throws NoSuchElementException if there are no more tuples
 	 */
-	public Tuple next()
-			throws DbException, TransactionAbortedException, NoSuchElementException;
+	public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException;
 
 	/**
 	 * Resets the iterator to the start.

@@ -18,7 +18,7 @@ public class BTreeHeaderPage implements Page {
 	final BTreePageId pid;
 	final byte header[];
 	final int numSlots;
-	private final Byte oldDataLock = new Byte((byte) 0);
+	private final Byte oldDataLock = (byte) 0;
 	byte[] oldData;
 	private volatile boolean dirty = false;
 	private volatile TransactionId dirtier = null;
@@ -164,9 +164,9 @@ public class BTreeHeaderPage implements Page {
 		}
 
 		// create the header of the page
-		for (int i = 0; i < header.length; i++) {
+		for (byte aHeader : header) {
 			try {
-				dos.writeByte(header[i]);
+				dos.writeByte(aHeader);
 			} catch (IOException e) {
 				// this really shouldn't happen
 				e.printStackTrace();

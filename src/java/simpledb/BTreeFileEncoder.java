@@ -94,14 +94,8 @@ public class BTreeFileEncoder {
 				t = new Transaction();
 			}
 			it.close();
-		} catch (TransactionAbortedException te) {
+		} catch (TransactionAbortedException | DbException | IOException te) {
 			te.printStackTrace();
-			return bf;
-		} catch (DbException e) {
-			e.printStackTrace();
-			return bf;
-		} catch (IOException e) {
-			e.printStackTrace();
 			return bf;
 		}
 
@@ -180,7 +174,7 @@ public class BTreeFileEncoder {
 		HeapFile heapf = Utility.openHeapFile(numFields, hFile);
 
 		// read all the tuples from the heap file and sort them on the keyField
-		ArrayList<Tuple> tuples = new ArrayList<Tuple>();
+		ArrayList<Tuple> tuples = new ArrayList<>();
 		TransactionId tid = new TransactionId();
 		DbFileIterator it = Database.getCatalog().getDatabaseFile(heapf.getId()).iterator(tid);
 		it.open();
@@ -209,7 +203,7 @@ public class BTreeFileEncoder {
 		int internalpointerbytes = 2 * BTreeLeafPage.INDEX_SIZE + 1;
 		int nentries = (npagebytes * 8 - internalpointerbytes * 8 - 1) / (nentrybytes * 8 + 1);  //floor comes for free
 
-		ArrayList<ArrayList<BTreeEntry>> entries = new ArrayList<ArrayList<BTreeEntry>>();
+		ArrayList<ArrayList<BTreeEntry>> entries = new ArrayList<>();
 
 		// first add some bytes for the root pointer page
 		bf.writePage(new BTreeRootPtrPage(BTreeRootPtrPage.getId(tableid),
@@ -220,8 +214,8 @@ public class BTreeFileEncoder {
 		// We wait until we have two full pages of tuples before writing out the first page
 		// so that we will not end up with any pages containing less than nrecords/2 tuples
 		// (unless it's the only page)
-		ArrayList<Tuple> page1 = new ArrayList<Tuple>();
-		ArrayList<Tuple> page2 = new ArrayList<Tuple>();
+		ArrayList<Tuple> page1 = new ArrayList<>();
+		ArrayList<Tuple> page2 = new ArrayList<>();
 		BTreePageId leftSiblingId = null;
 		for (Tuple tup : tuples) {
 			if (page1.size() < nrecords) {
@@ -243,7 +237,7 @@ public class BTreeFileEncoder {
 						keyType, tableid, keyField);
 
 				page1 = page2;
-				page2 = new ArrayList<Tuple>();
+				page2 = new ArrayList<>();
 				page2.add(tup);
 			}
 		}
@@ -266,8 +260,8 @@ public class BTreeFileEncoder {
 		} else {
 			// split the remaining tuples in half
 			int remainingTuples = page1.size() + page2.size();
-			ArrayList<Tuple> secondToLastPg = new ArrayList<Tuple>();
-			ArrayList<Tuple> lastPg = new ArrayList<Tuple>();
+			ArrayList<Tuple> secondToLastPg = new ArrayList<>();
+			ArrayList<Tuple> lastPg = new ArrayList<>();
 			secondToLastPg.addAll(page1.subList(0, remainingTuples / 2));
 			lastPg.addAll(page1.subList(remainingTuples / 2, page1.size()));
 			lastPg.addAll(page2);
@@ -393,8 +387,8 @@ public class BTreeFileEncoder {
 				bf.writePage(new BTreeInternalPage(internalPid, internalPageBytes, keyField));
 			} else {
 				// split the remaining entries in half
-				ArrayList<BTreeEntry> secondToLastPg = new ArrayList<BTreeEntry>();
-				ArrayList<BTreeEntry> lastPg = new ArrayList<BTreeEntry>();
+				ArrayList<BTreeEntry> secondToLastPg = new ArrayList<>();
+				ArrayList<BTreeEntry> lastPg = new ArrayList<>();
 				secondToLastPg.addAll(entries.get(i).subList(0, size / 2));
 				lastPg.addAll(entries.get(i).subList(size / 2 + 1, size));
 

@@ -10,11 +10,12 @@ import java.io.IOException;
  * @see BufferPool
  */
 public abstract class BTreePage implements Page {
+
 	protected final static int INDEX_SIZE = Type.INT_TYPE.getLen();
 	protected final BTreePageId pid;
 	protected final TupleDesc td;
 	protected final int keyField;
-	protected final Byte oldDataLock = new Byte((byte) 0);
+	protected final Byte oldDataLock = (byte) 0;
 	protected volatile boolean dirty = false;
 	protected volatile TransactionId dirtier = null;
 	protected int parent; // parent is always internal node or 0 for root node
@@ -37,9 +38,8 @@ public abstract class BTreePage implements Page {
 	 * ceiling((no. entry slots + 1) / 8)
 	 * <p>
 	 *
-	 * @param id   - the id of this page
-	 * @param data - the raw data of this page
-	 * @param key  - the field which the index is keyed on
+	 * @param id  - the id of this page
+	 * @param key - the field which the index is keyed on
 	 * @see Database#getCatalog
 	 * @see Catalog#getTupleDesc
 	 * @see BufferPool#getPageSize()

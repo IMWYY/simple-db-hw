@@ -73,8 +73,7 @@ public class BTreePageId implements PageId {
 	 * @see BufferPool
 	 */
 	public int hashCode() {
-		int code = (tableId << 16) + (pgNo << 2) + pgcateg;
-		return code;
+		return (tableId << 16) + (pgNo << 2) + pgcateg;
 	}
 
 	/**
@@ -92,13 +91,10 @@ public class BTreePageId implements PageId {
 	}
 
 	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("(tableId: ").append(tableId)
-				.append(", pgNo: ").append(pgNo)
-				.append(", pgcateg: ").append(categToString(pgcateg))
-				.append(")");
-
-		return sb.toString();
+		return "(tableId: " + tableId
+				+ ", pgNo: " + pgNo
+				+ ", pgcateg: " + categToString(pgcateg)
+				+ ")";
 	}
 
 	/**

@@ -102,8 +102,7 @@ public class BTreeFile implements DbFile {
 							+ BTreeRootPtrPage.getPageSize() + " bytes from BTreeFile");
 				}
 				Debug.log(Debug.LEVEL_DEBUG, "BTreeFile.readPage: read page %d", id.getPageNumber());
-				BTreeRootPtrPage p = new BTreeRootPtrPage(id, pageBuf);
-				return p;
+				return new BTreeRootPtrPage(id, pageBuf);
 			} else {
 				byte pageBuf[] = new byte[BufferPool.getPageSize()];
 				if (bis.skip(BTreeRootPtrPage.getPageSize() + (id.getPageNumber() - 1) * BufferPool.getPageSize()) !=
@@ -121,14 +120,11 @@ public class BTreeFile implements DbFile {
 				}
 				Debug.log(Debug.LEVEL_DEBUG, "BTreeFile.readPage: read page %d", id.getPageNumber());
 				if (id.pgcateg() == BTreePageId.INTERNAL) {
-					BTreeInternalPage p = new BTreeInternalPage(id, pageBuf, keyField);
-					return p;
+					return new BTreeInternalPage(id, pageBuf, keyField);
 				} else if (id.pgcateg() == BTreePageId.LEAF) {
-					BTreeLeafPage p = new BTreeLeafPage(id, pageBuf, keyField);
-					return p;
+					return new BTreeLeafPage(id, pageBuf, keyField);
 				} else { // id.pgcateg() == BTreePageId.HEADER
-					BTreeHeaderPage p = new BTreeHeaderPage(id, pageBuf);
-					return p;
+					return new BTreeHeaderPage(id, pageBuf);
 				}
 			}
 		} catch (IOException e) {
@@ -196,8 +192,7 @@ public class BTreeFile implements DbFile {
 	 * @return the left-most leaf page possibly containing the key field f
 	 */
 	private BTreeLeafPage findLeafPage(TransactionId tid, HashMap<PageId, Page> dirtypages, BTreePageId pid,
-			Permissions perm,
-			Field f)
+			Permissions perm, Field f)
 			throws DbException, TransactionAbortedException {
 		// some code goes here
 		return null;
@@ -214,8 +209,7 @@ public class BTreeFile implements DbFile {
 	 * @return the left-most leaf page possibly containing the key field f
 	 * @see #findLeafPage(TransactionId, HashMap, BTreePageId, Permissions, Field)
 	 */
-	BTreeLeafPage findLeafPage(TransactionId tid, BTreePageId pid, Permissions perm,
-			Field f)
+	BTreeLeafPage findLeafPage(TransactionId tid, BTreePageId pid, Permissions perm, Field f)
 			throws DbException, TransactionAbortedException {
 		return findLeafPage(tid, new HashMap<PageId, Page>(), pid, perm, f);
 	}
@@ -241,8 +235,7 @@ public class BTreeFile implements DbFile {
 	 * @see #getParentWithEmptySlots(TransactionId, HashMap, BTreePageId, Field)
 	 */
 	protected BTreeLeafPage splitLeafPage(TransactionId tid, HashMap<PageId, Page> dirtypages, BTreeLeafPage page,
-			Field field)
-			throws DbException, IOException, TransactionAbortedException {
+			Field field) throws DbException, IOException, TransactionAbortedException {
 		// some code goes here
 		//
 		// Split the leaf page by adding a new page on the right of the existing
@@ -277,8 +270,7 @@ public class BTreeFile implements DbFile {
 	 * @see #updateParentPointers(TransactionId, HashMap, BTreeInternalPage)
 	 */
 	protected BTreeInternalPage splitInternalPage(TransactionId tid, HashMap<PageId, Page> dirtypages,
-			BTreeInternalPage page, Field field)
-			throws DbException, IOException, TransactionAbortedException {
+			BTreeInternalPage page, Field field) throws DbException, IOException, TransactionAbortedException {
 		// some code goes here
 		//
 		// Split the internal page by adding a new page on the right of the existing
@@ -310,7 +302,7 @@ public class BTreeFile implements DbFile {
 	private BTreeInternalPage getParentWithEmptySlots(TransactionId tid, HashMap<PageId, Page> dirtypages,
 			BTreePageId parentId, Field field) throws DbException, IOException, TransactionAbortedException {
 
-		BTreeInternalPage parent = null;
+		BTreeInternalPage parent;
 
 		// create a parent node if necessary
 		// this will be the new root of the tree

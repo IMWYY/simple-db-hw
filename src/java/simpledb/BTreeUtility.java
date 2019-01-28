@@ -385,8 +385,7 @@ public class BTreeUtility {
 		byte[] data = BTreeFileEncoder.convertToInternalPage(BTreeUtility
 						.generateRandomEntries(numKeys, pid.getTableId(), childPageCategory, minKey, maxKey, minChildPtr),
 				BufferPool.getPageSize(), Type.INT_TYPE, childPageCategory);
-		BTreeInternalPage page = new BTreeInternalPage(pid, data, keyField);
-		return page;
+		return new BTreeInternalPage(pid, data, keyField);
 	}
 
 	/**
@@ -479,9 +478,7 @@ public class BTreeUtility {
 		fos.write(new byte[0]);
 		fos.close();
 
-		BTreeFile bf = openBTreeFile(cols, f, keyField);
-
-		return bf;
+		return openBTreeFile(cols, f, keyField);
 	}
 
 	/**
@@ -503,9 +500,7 @@ public class BTreeUtility {
 		}
 		bw.close();
 
-		BTreeFile bf = openBTreeFile(cols, f, keyField);
-
-		return bf;
+		return openBTreeFile(cols, f, keyField);
 	}
 
 	/**

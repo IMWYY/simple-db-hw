@@ -117,8 +117,7 @@ public class BTreeLeafPage extends BTreePage {
 		int bitsPerTupleIncludingHeader = td.getSize() * 8 + 1;
 		// extraBits are: left sibling pointer, right sibling pointer, parent pointer
 		int extraBits = 3 * INDEX_SIZE * 8;
-		int tuplesPerPage = (BufferPool.getPageSize() * 8 - extraBits) / bitsPerTupleIncludingHeader; //round down
-		return tuplesPerPage;
+		return (BufferPool.getPageSize() * 8 - extraBits) / bitsPerTupleIncludingHeader;
 	}
 
 	/**
@@ -360,7 +359,8 @@ public class BTreeLeafPage extends BTreePage {
 
 		// insert new record into the correct spot in sorted order
 		markSlotUsed(goodSlot, true);
-		Debug.log(Debug.LEVEL_DEBUG, "BTreeLeafPage.insertTuple: new tuple, tableId = %d pageId = %d slotId = %d", pid.getTableId(),
+		Debug.log(Debug.LEVEL_DEBUG, "BTreeLeafPage.insertTuple: new tuple, tableId = %d pageId = %d slotId = %d",
+				pid.getTableId(),
 				pid.getPageNumber(), goodSlot);
 		RecordId rid = new RecordId(pid, goodSlot);
 		t.setRecordId(rid);
@@ -516,7 +516,8 @@ public class BTreeLeafPage extends BTreePage {
 
 		try {
 			if (!isSlotUsed(i)) {
-				Debug.log(Debug.LEVEL_DEBUG, "BTreeLeafPage.getTuple: slot %d in %d:%d is not used", i, pid.getTableId(),
+				Debug.log(Debug.LEVEL_DEBUG, "BTreeLeafPage.getTuple: slot %d in %d:%d is not used", i,
+						pid.getTableId(),
 						pid.getPageNumber());
 				return null;
 			}
@@ -559,7 +560,6 @@ class BTreeLeafPageIterator implements Iterator<Tuple> {
 
 	public Tuple next() {
 		Tuple next = nextToReturn;
-
 		if (next == null) {
 			if (hasNext()) {
 				next = nextToReturn;
@@ -583,7 +583,7 @@ class BTreeLeafPageIterator implements Iterator<Tuple> {
  */
 class BTreeLeafPageReverseIterator implements Iterator<Tuple> {
 	int curTuple;
-	Tuple nextToReturn = null;
+	private Tuple nextToReturn = null;
 	BTreeLeafPage p;
 
 	public BTreeLeafPageReverseIterator(BTreeLeafPage p) {
